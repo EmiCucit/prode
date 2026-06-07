@@ -4,23 +4,56 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "seed": "tsx scripts/seed-users.ts",
+    "sync": "tsx scripts/sync-fixtures.ts",
+    "generate-icons": "tsx scripts/generate-icons.ts",
+    "dev:seed-fixtures": "tsx scripts/dev/seed-fixtures.ts",
+    "dev:load-result": "tsx scripts/dev/load-result.ts",
+    "dev:standings": "tsx scripts/dev/show-standings.ts",
+    "dev:predictions": "tsx scripts/dev/show-predictions.ts",
+    "dev:clear-fixtures": "tsx scripts/dev/clear-fixtures.ts",
+    "dev:clear-predictions": "tsx scripts/dev/clear-predictions.ts",
+    "dev:verify-fd": "tsx scripts/dev/verify-football-data.ts"
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.2.4",
+    "@serwist/next": "^9.5.11",
+    "@supabase/supabase-js": "^2.106.2",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0",
+    "bcryptjs": "^3.0.3",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "jose": "^6.2.3",
+    "lucide-react": "^1.17.0",
     "next": "16.2.6",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "server-only": "^0.0.1",
+    "serwist": "^9.5.11",
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/testing-library__jest-dom": "^5.14.9",
+    "@vitejs/plugin-react": "^6.0.2",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.22.3",
+    "typescript": "^5",
+    "vitest": "^4.1.7"
   }
 }
