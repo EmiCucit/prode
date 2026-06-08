@@ -1,0 +1,33 @@
+name: Sync resultados
+
+# Sincroniza la tabla `results` (Supabase prod) con football-data.org.
+# El ranking se recalcula solo (vista SQL `standings`) cuando un partido
+# queda finalizado en `results`, así que basta con mantener esta tabla al día.
+on:
+  schedule:
+    # Cada 10 min. GitHub puede demorar algunos minutos en disparar y solo
+    # ejecuta schedules en la rama por defecto (master).
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {} # permite ejecutarlo a mano desde la pestaña Actions
+
+# Evita solapamientos si una corrida tarda más que el intervalo.
+concurrency:
+  group: sync-fixtures
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run sync
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          FOOTBALL_DATA_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
