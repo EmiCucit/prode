@@ -41,9 +41,9 @@ const FIXTURES: Seed[] = [
     stage: "knockout", round: "Quarter-finals", group_name: null, kickoff_at: at(6 * DAY), status: "NS" },
 
   // ── Casos borde ──
-  // Cierra pronto (kickoff en 30 min → ventana ya cerrada, faltan <15 min)
+  // Cierra pronto (kickoff en 5 min → ventana ya cerrada, faltan <10 min)
   { fixture_id: 990007, home_team_name: "Alemania", away_team_name: "Japón",
-    stage: "group", round: "Group C - 1", group_name: "C", kickoff_at: at(10 * 60 * 1000), status: "NS" },
+    stage: "group", round: "Group C - 1", group_name: "C", kickoff_at: at(5 * 60 * 1000), status: "NS" },
   // Kickoff en el pasado → ventana cerrada
   { fixture_id: 990008, home_team_name: "Croacia", away_team_name: "Bélgica",
     stage: "group", round: "Group C - 1", group_name: "C", kickoff_at: at(-3 * HOUR), status: "NS" },

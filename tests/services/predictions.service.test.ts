@@ -80,8 +80,8 @@ describe("PredictionsService.upsert", () => {
     expect(preds.upsert).not.toHaveBeenCalled();
   });
 
-  it("lanza 'Prediction window is closed' si faltan <15 min para el kickoff", async () => {
-    const kickoff = new Date(now.getTime() + 10 * 60 * 1000).toISOString();
+  it("lanza 'Prediction window is closed' si faltan <10 min para el kickoff", async () => {
+    const kickoff = new Date(now.getTime() + 5 * 60 * 1000).toISOString();
     const { svc, preds } = makeService(makeFixture({ kickoff_at: kickoff }));
     await expect(svc.upsert(baseParams)).rejects.toThrow("Prediction window is closed");
     expect(preds.upsert).not.toHaveBeenCalled();
@@ -93,7 +93,7 @@ describe("PredictionsService.upsert", () => {
     await expect(svc.upsert(baseParams)).rejects.toThrow("Prediction window is closed");
   });
 
-  it("permite guardar si faltan >15 min para el kickoff", async () => {
+  it("permite guardar si faltan >10 min para el kickoff", async () => {
     const kickoff = new Date(now.getTime() + 20 * 60 * 1000).toISOString();
     const { svc, preds } = makeService(makeFixture({ kickoff_at: kickoff }));
     await svc.upsert(baseParams);

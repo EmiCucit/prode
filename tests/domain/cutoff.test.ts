@@ -5,23 +5,23 @@ const NOW = new Date("2026-06-15T10:00:00.000Z");
 const min = (n: number) => n * 60 * 1000;
 
 describe("isPredictionOpen", () => {
-  it("más de 15 min antes del kickoff → abierto", () => {
-    const kickoff = new Date(NOW.getTime() + min(20));
+  it("bastante antes del cutoff → abierto", () => {
+    const kickoff = new Date(NOW.getTime() + min(CUTOFF_MINUTES + 10));
     expect(isPredictionOpen(kickoff, NOW)).toBe(true);
   });
 
-  it("exactamente 1 ms más de 15 min → abierto", () => {
+  it("1 ms más que el cutoff → abierto", () => {
     const kickoff = new Date(NOW.getTime() + min(CUTOFF_MINUTES) + 1);
     expect(isPredictionOpen(kickoff, NOW)).toBe(true);
   });
 
-  it("exactamente 15 min antes → cerrado (borde exclusivo)", () => {
+  it("exactamente en el cutoff → cerrado (borde exclusivo)", () => {
     const kickoff = new Date(NOW.getTime() + min(CUTOFF_MINUTES));
     expect(isPredictionOpen(kickoff, NOW)).toBe(false);
   });
 
-  it("14 min antes del kickoff → cerrado", () => {
-    const kickoff = new Date(NOW.getTime() + min(14));
+  it("1 min dentro del cutoff → cerrado", () => {
+    const kickoff = new Date(NOW.getTime() + min(CUTOFF_MINUTES - 1));
     expect(isPredictionOpen(kickoff, NOW)).toBe(false);
   });
 
@@ -42,12 +42,12 @@ describe("isPredictionOpen", () => {
 
 describe("msUntilCutoff", () => {
   it("retorna positivo cuando falta tiempo", () => {
-    const kickoff = new Date(NOW.getTime() + min(30));
-    expect(msUntilCutoff(kickoff, NOW)).toBe(min(15));
+    const kickoff = new Date(NOW.getTime() + min(CUTOFF_MINUTES + 20));
+    expect(msUntilCutoff(kickoff, NOW)).toBe(min(20));
   });
 
   it("retorna negativo cuando ya cerró", () => {
-    const kickoff = new Date(NOW.getTime() + min(10));
+    const kickoff = new Date(NOW.getTime() + min(CUTOFF_MINUTES - 5));
     expect(msUntilCutoff(kickoff, NOW)).toBe(-min(5));
   });
 

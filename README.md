@@ -223,7 +223,7 @@ npm run start   # servidor en http://localhost:3000
 | Navegación de páginas | NetworkFirst, fallback 5s | ✅ Último estado cacheado |
 | `POST` (auth, predicciones) | Sin caché | ❌ Requiere conexión |
 
-> **Garantía de integridad**: aunque la UI esté cacheada, el servidor **siempre valida el plazo de 15 minutos** antes de aceptar predicciones. El modo offline no permite bypasear el cierre de predicciones.
+> **Garantía de integridad**: aunque la UI esté cacheada, el servidor **siempre valida el plazo de 10 minutos** antes de aceptar predicciones. El modo offline no permite bypasear el cierre de predicciones.
 
 ### Regenerar íconos
 

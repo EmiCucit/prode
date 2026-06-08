@@ -49,7 +49,7 @@ const serwist = new Serwist({
     },
 
     // ── Predictions GET (NetworkFirst, 30 s) ───────────────────
-    // Must be network-first: stale data could confuse the 15-min cutoff UI
+    // Must be network-first: stale data could confuse the 10-min cutoff UI
     {
       matcher: ({ request }) =>
         new URL(request.url).pathname === "/api/predictions" &&

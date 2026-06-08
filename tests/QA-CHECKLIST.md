@@ -49,9 +49,9 @@ Verificar que estén seteadas en el entorno de deploy (Vercel/host):
 
 ## 4. Predicciones (flujo principal)
 
-- [ ] Cargar predicción en partido futuro (>15 min) → se guarda, persiste al recargar.
+- [ ] Cargar predicción en partido futuro (>10 min) → se guarda, persiste al recargar.
 - [ ] Editar una predicción existente → se actualiza (upsert por user+fixture).
-- [ ] Partido a <15 min del kickoff → formulario bloqueado / 422 al enviar.
+- [ ] Partido a <10 min del kickoff → formulario bloqueado / 422 al enviar.
 - [ ] Partido ya empezado/jugado → no se puede predecir.
 - [ ] Scores negativos o no enteros → rechazados (validación cliente y 400 server).
 - [ ] `penaltyWinner` solo aparece/aplica en partidos de eliminatoria.

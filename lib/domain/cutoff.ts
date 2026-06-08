@@ -1,4 +1,4 @@
-export const CUTOFF_MINUTES = 15;
+export const CUTOFF_MINUTES = 10;
 
 /**
  * Returns true if there is still time to submit a prediction.
