@@ -14,6 +14,7 @@ Desplegada en Vercel, instalable como PWA.
 | Rate limiting | Upstash Redis (@upstash/ratelimit) |
 | Datos de partidos | football-data.org v4 (competición WC, free tier) |
 | PWA | @serwist/next — service worker con caching offline |
+| Notificaciones | Web Push (VAPID, `web-push`) — recordatorios 2 h antes |
 | Tests | Vitest (dominio, servicios, auth, API, componentes y paridad SQL) |
 | Deploy | Vercel |
 
@@ -37,7 +38,12 @@ cp .env.example .env.local
 | `UPSTASH_REDIS_REST_TOKEN` | Token de la base Redis |
 | `AUTH_SECRET` | Secreto para firmar JWT (mínimo 32 caracteres). Generá con: `openssl rand -base64 32` |
 | `SEED_PASSWORDS` | Contraseñas en texto plano separadas por coma, mismo orden que los 10 jugadores. **Solo en `.env.local`, nunca commitear.** |
-| `FIXTURES_SOURCE` | Opcional (solo dev). `db` hace que la app lea fixtures de la tabla `results` en vez de football-data.org (dry-run local). **Vacío en producción.** Ver [`scripts/dev/README.md`](scripts/dev/README.md). |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Clave pública VAPID (Web Push). Generá el par con `npx web-push generate-vapid-keys`. |
+| `VAPID_PRIVATE_KEY` | Clave privada VAPID — **solo server-side**. |
+| `VAPID_SUBJECT` | Contacto VAPID, ej. `mailto:tu@email.com`. |
+| `REMINDER_LEAD_HOURS` | Opcional. Antelación del recordatorio push (default `2`). |
+| `FIXTURES_SOURCE` | Opcional (solo dev). `db` lee fixtures de la tabla `results` en vez de football-data.org (dry-run). **Vacío en producción.** Ver [`scripts/dev/README.md`](scripts/dev/README.md). |
+| `NEXT_PUBLIC_PUSH_TEST` | Opcional (solo dev). `1` muestra el botón "Probar notificación" en `/notificaciones`. |
 
 ---
 
@@ -74,8 +80,11 @@ Abrir [http://localhost:3000](http://localhost:3000).
 1. Abrí tu proyecto en [app.supabase.com](https://app.supabase.com).
 2. Ir a **SQL Editor**.
 3. Pegá y ejecutá, **en orden**, el contenido completo de:
-   - [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql)
-   - [`supabase/migrations/002_penalty_scores.sql`](supabase/migrations/002_penalty_scores.sql) — columnas de penales + bonus en la vista `standings`.
+   - [`001_initial.sql`](supabase/migrations/001_initial.sql) — tablas, vista `standings`, RLS.
+   - [`002_penalty_scores.sql`](supabase/migrations/002_penalty_scores.sql) — columnas de penales.
+   - [`003_standings_breakdown.sql`](supabase/migrations/003_standings_breakdown.sql) — `exact_with_bonus` (desglose del ranking).
+   - [`004_cutoff_10min.sql`](supabase/migrations/004_cutoff_10min.sql) — cutoff de predicción a 10 min (RLS).
+   - [`005_push_notifications.sql`](supabase/migrations/005_push_notifications.sql) — tablas de notificaciones push.
 
 El script crea:
 
@@ -106,10 +115,7 @@ Desempate: `total_points DESC` → `exact_results DESC` → `display_name ASC`.
 npm run sync
 ```
 
-Ejecutar periódicamente durante el torneo (recomendado: cada 30 min). Opciones:
-
-- **Vercel Cron**: agregar a `vercel.json` un endpoint `/api/sync` con schedule `"*/30 * * * *"`.
-- **GitHub Actions**: workflow con `schedule: cron: '*/30 * * * *'` que corre `npm run sync`.
+Ya está automatizado con **GitHub Actions** (`.github/workflows/sync.yml`, cada ~10 min, corre `npm run sync` con los secrets del repo). El ranking se recalcula solo (vista `standings`) al finalizar cada partido. Se puede correr a mano desde la pestaña **Actions** (`workflow_dispatch`).
 
 ---
 
@@ -140,6 +146,7 @@ npm test                 # 136 tests (dominio, servicios, auth, API, componentes
 npm run test:watch       # Vitest en modo watch
 npm run seed             # Inserta/actualiza los 10 usuarios en Supabase
 npm run sync             # Sincroniza fixtures de football-data.org a la tabla results
+npm run reminders        # Envía recordatorios push a quien no predijo (cron 2h antes)
 npm run generate-icons   # Regenera los íconos PNG pixel-art en public/icons/
 ```
 
@@ -175,7 +182,9 @@ Se configuran por **scope** en **Settings → Environment Variables**:
 
 ### Sincronización de resultados (cron)
 
-`results` se mantiene al día con **GitHub Actions** (`.github/workflows/sync.yml`, cada ~10 min), que corre `npm run sync` con los secrets del repo. El ranking se recalcula solo (vista SQL `standings`) al finalizar cada partido. Se puede disparar a mano desde la pestaña **Actions** (`workflow_dispatch`).
+`results` se mantiene al día con **GitHub Actions** (`.github/workflows/sync.yml`, cada ~10 min), que corre `npm run sync` con los secrets del repo. El ranking se recalcula solo (vista SQL `standings`) al finalizar cada partido.
+
+Los **recordatorios push** corren con otro workflow (`.github/workflows/reminders.yml`, cada 30 min → `npm run reminders`): avisan **2 h antes** a los usuarios suscriptos que aún no cargaron su predicción (ventana en `REMINDER_LEAD_HOURS`, dedup por `reminder_sent`). Ambos se pueden disparar a mano desde **Actions** (`workflow_dispatch`).
 
 ### Dominio y HTTPS
 
@@ -247,14 +256,16 @@ app/
     layout.tsx            Auth guard + NavBar
     partidos/             Lista de partidos, filtros y predicciones
     ranking/              Podio + tabla de posiciones
+    notificaciones/       Activar push + botón de prueba (dev)
   api/
     auth/login|logout/    Route Handlers de auth (bcrypt + JWT)
     fixtures/             Proxy football-data.org (token solo en server)
     predictions/          CRUD predicciones con rate limiting
+    push/subscribe|test/  Suscripción y envío de prueba de Web Push
 
 components/
-  atoms/      StatusBadge · Countdown · ScoreInput · NavBar · SerwistRegistration
-  molecules/  FixtureCard · PredictionForm · FilterBar · PodiumSlot
+  atoms/      StatusBadge · Countdown · ScoreInput · NavBar · UserMenu · AutoRefresh · SerwistRegistration
+  molecules/  FixtureCard · PredictionForm · FilterBar · PodiumSlot · NotificationsManager
   organisms/  FixtureList · RankingPodium · RankingTable · skeletons
   avatars/    10 avatares SVG pixel-art + componente índice Avatar
 
@@ -263,20 +274,22 @@ lib/
   data/       repositorios Supabase + interfaces
   services/   fixtures.service · predictions.service
   auth/       session.ts (JWT)
+  push/       webpush.ts (envío Web Push con VAPID)
   ratelimit.ts
 
 scripts/
-  seed-users.ts      Seed de los 10 jugadores
-  sync-fixtures.ts   Sincronización football-data.org → results
-  generate-icons.ts  Generación íconos PNG
-  dev/               Herramientas de dry-run local (seed/load/show/clear) — ver su README
+  seed-users.ts       Seed de los 10 jugadores
+  sync-fixtures.ts    Sincronización football-data.org → results
+  send-reminders.ts   Recordatorios push 2 h antes (cron)
+  generate-icons.ts   Generación íconos PNG
+  dev/                Herramientas de dry-run local + inspect-db — ver su README
 
-supabase/migrations/
-  001_initial.sql        Tablas + vista standings + RLS
-  002_penalty_scores.sql Columnas de penales + bonus en standings
+supabase/migrations/   001 inicial · 002 penales · 003 desglose · 004 cutoff 10min · 005 push
+
+.github/workflows/     sync.yml (resultados) · reminders.yml (push)
 
 src/
-  sw.ts              Service worker (compilado durante npm run build)
+  sw.ts              Service worker (caching + push/notificationclick)
 
 tests/                136 tests Vitest
   domain/             scoring · cutoff · ranking (lógica pura)
