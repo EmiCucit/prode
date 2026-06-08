@@ -45,17 +45,6 @@ SELECT
       AND p.away_score = r.away_score
   ) AS exact_results,
 
-  -- Plenos que además acertaron el bonus de penales (valen 4pts)
-  COUNT(p.id) FILTER (
-    WHERE r.status IN ('FT', 'AET', 'PEN')
-      AND r.home_score IS NOT NULL
-      AND p.home_score = r.home_score
-      AND p.away_score = r.away_score
-      AND r.stage = 'knockout'
-      AND r.penalty_winner IS NOT NULL
-      AND p.penalty_winner = r.penalty_winner
-  ) AS exact_with_bonus,
-
   COUNT(p.id) FILTER (
     WHERE r.status IN ('FT', 'AET', 'PEN')
       AND r.home_score IS NOT NULL
@@ -65,7 +54,20 @@ SELECT
         (p.home_score < p.away_score AND r.home_score < r.away_score) OR
         (p.home_score = p.away_score AND r.home_score = r.away_score)
       )
-  ) AS correct_outcomes
+  ) AS correct_outcomes,
+
+  -- Plenos que además acertaron el bonus de penales (valen 4pts).
+  -- IMPORTANTE: va al final → CREATE OR REPLACE VIEW solo permite AGREGAR
+  -- columnas, no insertarlas en el medio ni renombrar las existentes.
+  COUNT(p.id) FILTER (
+    WHERE r.status IN ('FT', 'AET', 'PEN')
+      AND r.home_score IS NOT NULL
+      AND p.home_score = r.home_score
+      AND p.away_score = r.away_score
+      AND r.stage = 'knockout'
+      AND r.penalty_winner IS NOT NULL
+      AND p.penalty_winner = r.penalty_winner
+  ) AS exact_with_bonus
 
 FROM users u
 LEFT JOIN predictions p ON p.user_id = u.id
