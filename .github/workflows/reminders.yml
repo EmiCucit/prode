@@ -1,0 +1,37 @@
+name: Recordatorios push
+
+# Avisa por push a quienes no cargaron su predicción y el partido arranca
+# pronto (ventana REMINDER_LEAD_HOURS, default 2h). Corre contra prod.
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      lead_hours:
+        description: "Ventana en horas (override para pruebas)"
+        required: false
+        default: ""
+
+concurrency:
+  group: send-reminders
+  cancel-in-progress: false
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run reminders
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
+          REMINDER_LEAD_HOURS: ${{ github.event.inputs.lead_hours || vars.REMINDER_LEAD_HOURS || '2' }}
