@@ -151,28 +151,33 @@ npm run generate-icons   # Regenera los íconos PNG pixel-art en public/icons/
 
 ## Deploy en Vercel
 
-### 1. Subir a GitHub y conectar en Vercel
+El proyecto está conectado a Vercel vía Git, con **deploy automático por rama**:
 
-1. Crear repo en GitHub y hacer push del código.
-2. En [vercel.com](https://vercel.com): **New Project** → importar el repo.
+| Rama | Entorno Vercel | Base de datos | URL |
+|---|---|---|---|
+| `master` (Production Branch) | **Production** | Supabase **prod** | `prode-delta.vercel.app` |
+| `dev` | **Preview** | Supabase **dev** | URL estable de la rama (`prode-git-dev-…vercel.app`) |
 
-### 2. Build command
+Cada push/merge a `master` redeploya **producción**; cada push/merge a `dev` redeploya el **entorno de testeo**. El flujo de trabajo es: desarrollar contra `dev`, validar en su preview, y mergear a `master` para publicar.
 
-Vercel detecta Next.js automáticamente. Asegurate de que el build command sea:
+### Build command
 
-```
-npm run build
-```
+Definido en `vercel.json` → `npm run build` (que es `next build --webpack`). El flag `--webpack` es **necesario** para que Serwist compile el service worker (Turbopack no lo soporta en build).
 
-> El script ya incluye `--webpack` internamente (`"build": "next build --webpack"`). Este flag es **necesario** para que Serwist compile el service worker.
+### Variables de entorno
 
-### 3. Variables de entorno
+Se configuran por **scope** en **Settings → Environment Variables**:
 
-En **Settings → Environment Variables**, agregar todas las de `.env.example` con sus valores de producción.
+- **Production** → credenciales de prod (Supabase prod, Upstash prod, `AUTH_SECRET` propio de prod, `FOOTBALL_DATA_TOKEN`).
+- **Preview (rama `dev`)** → credenciales de dev (Supabase dev, etc.).
 
-La `SUPABASE_SERVICE_ROLE_KEY` solo debe estar en el entorno de producción/preview de Vercel; nunca en el cliente.
+`SUPABASE_SERVICE_ROLE_KEY` solo vive server-side en Vercel; nunca se expone al cliente. `.vercelignore` evita subir los `.env*.local`.
 
-### 4. Dominio y HTTPS
+### Sincronización de resultados (cron)
+
+`results` se mantiene al día con **GitHub Actions** (`.github/workflows/sync.yml`, cada ~10 min), que corre `npm run sync` con los secrets del repo. El ranking se recalcula solo (vista SQL `standings`) al finalizar cada partido. Se puede disparar a mano desde la pestaña **Actions** (`workflow_dispatch`).
+
+### Dominio y HTTPS
 
 Vercel provee HTTPS automáticamente. Los service workers **solo funcionan en HTTPS** (o `localhost`).
 
