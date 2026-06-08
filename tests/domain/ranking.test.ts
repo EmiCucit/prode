@@ -5,6 +5,7 @@ function row(overrides: Partial<StandingRow> & Pick<StandingRow, "displayName" |
   return {
     userId: overrides.displayName,
     username: overrides.displayName.toLowerCase(),
+    exactWithBonus: 0,
     correctOutcomes: 0,
     predictionsMade: 0,
     ...overrides,

@@ -4,6 +4,7 @@ export interface StandingRow {
   displayName: string;
   totalPoints: number;
   exactResults: number;
+  exactWithBonus: number;
   correctOutcomes: number;
   predictionsMade: number;
 }

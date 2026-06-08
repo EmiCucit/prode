@@ -13,6 +13,7 @@ function row(over: Partial<StandingRow> & { displayName: string }): StandingRow 
     displayName: over.displayName,
     totalPoints: over.totalPoints ?? 0,
     exactResults: over.exactResults ?? 0,
+    exactWithBonus: over.exactWithBonus ?? 0,
     correctOutcomes: over.correctOutcomes ?? 0,
     predictionsMade: over.predictionsMade ?? 0,
   };
@@ -66,8 +67,21 @@ describe("RankingTable", () => {
     expect(within(top).getByText("5")).toBeInTheDocument();
 
     const cero = screen.getByText("Cero").closest("tr")!;
-    // plenos y resultados en 0 se muestran como guion
-    expect(within(cero).getAllByText("—")).toHaveLength(2);
+    // plenos, P+B y resultados en 0 se muestran como guion
+    expect(within(cero).getAllByText("—")).toHaveLength(3);
+  });
+
+  it("separa plenos comunes (3pts) de plenos con bonus (P+B, 4pts)", () => {
+    // 3 exactos totales, 1 de ellos con bonus de penales → Plenos=2, P+B=1
+    const players = [
+      row({ displayName: "Crack", totalPoints: 13, exactResults: 3, exactWithBonus: 1, correctOutcomes: 4 }),
+    ];
+
+    render(<RankingTable players={players} />);
+    const fila = screen.getByText("Crack").closest("tr")!;
+    expect(within(fila).getByText("2")).toBeInTheDocument(); // Plenos = 3 - 1
+    expect(within(fila).getByText("1")).toBeInTheDocument(); // P+B
+    expect(within(fila).getByText("4")).toBeInTheDocument(); // ✓ Resultado
   });
 
   it("renderiza sin filas de jugadores cuando la lista está vacía", () => {

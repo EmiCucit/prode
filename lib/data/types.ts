@@ -54,5 +54,6 @@ export interface DbStandingRow {
   predictions_made: number;
   total_points: number;
   exact_results: number;
+  exact_with_bonus: number;
   correct_outcomes: number;
 }
