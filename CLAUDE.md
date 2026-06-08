@@ -20,7 +20,7 @@ App de predicciones del Mundial para grupo cerrado de ~10 amigos.
 - Service worker en `src/sw.ts` con tsconfig propio `tsconfig.sw.json`
 - Todo acceso a Supabase server-side usa service role; client.ts es para futura realtime
 - Puntos NO se guardan en BD: se calculan en la vista SQL `standings`
-- api-football: league=1, season=2026, proxy en `app/api/fixtures/route.ts`
+- football-data.org v4: competición WC, auth `X-Auth-Token`, proxy en `app/api/fixtures/route.ts`
 
 ## Pasos completados
 - [x] Paso 1: Arquitectura y SQL

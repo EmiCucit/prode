@@ -1,6 +1,6 @@
 /**
- * Sincroniza la tabla `results` con los datos de api-football.
- * Ejecutar manualmente o configurar como cron en Vercel/GitHub Actions.
+ * Sincroniza la tabla `results` con los datos de football-data.org.
+ * Ejecutar manualmente o vía el cron de GitHub Actions (.github/workflows/sync.yml).
  * Uso: npm run sync
  */
 import { config } from "dotenv";
@@ -11,11 +11,11 @@ import { ResultsRepository } from "@/lib/data/results.repository";
 import type { DbResult } from "@/lib/data/types";
 
 async function main() {
-  console.log("🔄 Sincronizando fixtures con api-football...\n");
+  console.log("🔄 Sincronizando fixtures con football-data.org...\n");
 
   // revalidate=0 → siempre fresh (no Next.js cache fuera del runtime)
   const fixtures = await fetchFixtures({}, 0);
-  console.log(`   ${fixtures.length} fixtures recibidos de api-football`);
+  console.log(`   ${fixtures.length} fixtures recibidos de football-data.org`);
 
   const rows: Omit<DbResult, "updated_at">[] = fixtures.map((f) => ({
     fixture_id:     f.fixtureId,

@@ -12,9 +12,9 @@ Desplegada en Vercel, instalable como PWA.
 | Base de datos | Supabase (Postgres + RLS) |
 | Auth | JWT firmado (jose) + cookie httpOnly |
 | Rate limiting | Upstash Redis (@upstash/ratelimit) |
-| Datos de partidos | api-football v3 (league 1, season 2026) |
+| Datos de partidos | football-data.org v4 (competición WC, free tier) |
 | PWA | @serwist/next — service worker con caching offline |
-| Tests | Vitest (37 tests de dominio puro) |
+| Tests | Vitest (dominio, servicios, auth, API, componentes y paridad SQL) |
 | Deploy | Vercel |
 
 ---
@@ -29,7 +29,7 @@ cp .env.example .env.local
 
 | Variable | Descripción |
 |---|---|
-| `API_FOOTBALL_KEY` | API key de [api-football.com](https://api-football.com) |
+| `FOOTBALL_DATA_TOKEN` | Token de [football-data.org](https://www.football-data.org/client/register) (free tier; cubre la competición WC) |
 | `SUPABASE_URL` | URL del proyecto Supabase (Settings → API) |
 | `SUPABASE_ANON_KEY` | Anon/public key de Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key — **solo server-side, nunca exponer al cliente** |
@@ -37,6 +37,7 @@ cp .env.example .env.local
 | `UPSTASH_REDIS_REST_TOKEN` | Token de la base Redis |
 | `AUTH_SECRET` | Secreto para firmar JWT (mínimo 32 caracteres). Generá con: `openssl rand -base64 32` |
 | `SEED_PASSWORDS` | Contraseñas en texto plano separadas por coma, mismo orden que los 10 jugadores. **Solo en `.env.local`, nunca commitear.** |
+| `FIXTURES_SOURCE` | Opcional (solo dev). `db` hace que la app lea fixtures de la tabla `results` en vez de football-data.org (dry-run local). **Vacío en producción.** Ver [`scripts/dev/README.md`](scripts/dev/README.md). |
 
 ---
 
@@ -55,7 +56,7 @@ cp .env.example .env.local
 # 4. Seed de usuarios
 npm run seed
 
-# 5. Sincronizar fixtures desde api-football → tabla results
+# 5. Sincronizar fixtures desde football-data.org → tabla results
 npm run sync
 
 # 6. Levantar dev server
@@ -72,7 +73,9 @@ Abrir [http://localhost:3000](http://localhost:3000).
 
 1. Abrí tu proyecto en [app.supabase.com](https://app.supabase.com).
 2. Ir a **SQL Editor**.
-3. Pegá y ejecutá el contenido completo de [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql).
+3. Pegá y ejecutá, **en orden**, el contenido completo de:
+   - [`supabase/migrations/001_initial.sql`](supabase/migrations/001_initial.sql)
+   - [`supabase/migrations/002_penalty_scores.sql`](supabase/migrations/002_penalty_scores.sql) — columnas de penales + bonus en la vista `standings`.
 
 El script crea:
 
@@ -133,12 +136,16 @@ npm run seed
 npm run dev              # Dev server con Turbopack (sin service worker)
 npm run build            # Build de producción (webpack, compila el service worker)
 npm run start            # Servidor de producción local
-npm test                 # 37 tests unitarios (dominio puro)
+npm test                 # 133 tests (dominio, servicios, auth, API, componentes, paridad SQL)
 npm run test:watch       # Vitest en modo watch
 npm run seed             # Inserta/actualiza los 10 usuarios en Supabase
-npm run sync             # Sincroniza fixtures de api-football a la tabla results
+npm run sync             # Sincroniza fixtures de football-data.org a la tabla results
 npm run generate-icons   # Regenera los íconos PNG pixel-art en public/icons/
 ```
+
+> Para probar el flujo completo en local sin pegarle al proveedor (sembrar
+> partidos y resultados ficticios), ver los scripts `dev:*` documentados en
+> [`scripts/dev/README.md`](scripts/dev/README.md).
 
 ---
 
@@ -237,7 +244,7 @@ app/
     ranking/              Podio + tabla de posiciones
   api/
     auth/login|logout/    Route Handlers de auth (bcrypt + JWT)
-    fixtures/             Proxy api-football (API key solo en server)
+    fixtures/             Proxy football-data.org (token solo en server)
     predictions/          CRUD predicciones con rate limiting
 
 components/
@@ -255,14 +262,24 @@ lib/
 
 scripts/
   seed-users.ts      Seed de los 10 jugadores
-  sync-fixtures.ts   Sincronización api-football → results
+  sync-fixtures.ts   Sincronización football-data.org → results
   generate-icons.ts  Generación íconos PNG
+  dev/               Herramientas de dry-run local (seed/load/show/clear) — ver su README
 
 supabase/migrations/
-  001_initial.sql    SQL completo (tablas + vista standings + RLS)
+  001_initial.sql        Tablas + vista standings + RLS
+  002_penalty_scores.sql Columnas de penales + bonus en standings
 
 src/
   sw.ts              Service worker (compilado durante npm run build)
 
-tests/domain/        37 tests unitarios Vitest
+tests/                133 tests Vitest
+  domain/             scoring · cutoff · ranking (lógica pura)
+  services/           fixtures · predictions
+  auth/               session (JWT)
+  api/                login · predictions (handlers con mocks)
+  components/         PredictionForm · RankingTable · AutoRefresh (jsdom + Testing Library)
+  lib/                ratelimit
+  sql/                paridad vista standings ↔ scoring.ts
+  QA-CHECKLIST.md     checklist de QA manual previo a prod
 ```

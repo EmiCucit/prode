@@ -3,7 +3,7 @@
 Lista de verificación previa a subir a producción. Cubre lo que los unit
 tests **no** pueden verificar (infra, env, BD real, PWA, seguridad, UX).
 
-> Tests automatizados: `npm test` (106 casos). Build: `npm run build`.
+> Tests automatizados: `npm test` (133 casos). Build: `npm run build`.
 > Ambos deben estar en verde antes de empezar este checklist.
 
 ---
@@ -15,8 +15,7 @@ Verificar que estén seteadas en el entorno de deploy (Vercel/host):
 - [ ] `AUTH_SECRET` — **≥ 32 caracteres**, aleatorio, distinto al de dev.
       (la app falla al firmar sesión si es más corto)
 - [ ] `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` — proyecto **prod**, no dev.
-- [ ] `API_FOOTBALL_KEY` — válida y con cuota disponible.
-- [ ] `FOOTBALL_SEASON=2026` (o el que corresponda).
+- [ ] `FOOTBALL_DATA_TOKEN` — válido y con cuota disponible (free tier: 10 req/min).
 - [ ] `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` — instancia prod.
 - [ ] `NODE_ENV=production` (lo setea el host; habilita cookie `secure`).
 - [ ] Ningún secreto commiteado: `.env*.local` está en `.gitignore`.
@@ -33,7 +32,7 @@ Verificar que estén seteadas en el entorno de deploy (Vercel/host):
   2. `SELECT * FROM standings;` y comparar `total_points` con lo esperado
      a mano y con `calcPoints` para los mismos datos.
   3. Confirmar tiebreakers: total_points → exact_results → display_name.
-- [ ] Fixtures cargados: `npm run sync` poblando `results` desde api-football.
+- [ ] Fixtures cargados: `npm run sync` poblando `results` desde football-data.org.
 - [ ] Usuarios creados: `npm run seed` (los ~10 amigos, con hashes bcrypt).
 
 ## 3. Autenticación y sesión
@@ -68,12 +67,12 @@ Verificar que estén seteadas en el entorno de deploy (Vercel/host):
 - [ ] Podio mobile (top-3) y escalera desktop (10) renderizan bien.
 - [ ] Predicciones ajenas visibles solo **después** del kickoff (no antes).
 
-## 6. api-football (proxy `/api/fixtures`)
+## 6. football-data.org (proxy `/api/fixtures`)
 
 - [ ] Lista de partidos carga con datos reales (logos, equipos, horarios).
-- [ ] Filtros por ronda/fecha/estado funcionan (params en URL).
+- [ ] Filtro por estado funciona (Próximos · En vivo · Finalizados).
 - [ ] Partidos en vivo revalidan más seguido (~15s).
-- [ ] Si api-football falla → 502 "Error al obtener partidos" (no rompe la UI).
+- [ ] Si football-data.org falla → 502 "Error al obtener partidos" (no rompe la UI).
 - [ ] Rate limit del proxy no se dispara en uso normal (60/min).
 - [ ] Zona horaria de los kickoffs correcta para los usuarios (AR).
 
@@ -98,7 +97,7 @@ Verificar que estén seteadas en el entorno de deploy (Vercel/host):
 ## 9. Build & deploy
 
 - [ ] `npm run build` en verde (sin errores de TypeScript ni de lint).
-- [ ] `npm test` en verde (106 tests).
+- [ ] `npm test` en verde (133 tests).
 - [ ] Deploy de prueba accesible por HTTPS.
 - [ ] `proxy.ts` (no `middleware.ts`) activo — rutas redirigen como se espera.
 - [ ] Assets estáticos y rutas del matcher excluidas correctamente del proxy.
@@ -120,4 +119,4 @@ Verificar que estén seteadas en el entorno de deploy (Vercel/host):
   contra que la vista `standings` y `scoring.ts` se desincronicen. Si tocás la
   lógica de puntaje, actualizá **ambos** y re-ejecutá la migración en Supabase.
 - Los handlers HTTP están testeados con mocks; el checklist los valida de punta
-  a punta contra infra real (Supabase + Upstash + api-football).
+  a punta contra infra real (Supabase + Upstash + football-data.org).

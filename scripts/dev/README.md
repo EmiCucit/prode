@@ -2,11 +2,11 @@
 
 Herramientas para probar el flujo completo (login → predecir → cargar
 resultados → ver ranking) **en local pegándole a Supabase dev**, sin
-depender de api-football. Útil para validar antes de subir a producción.
+depender de football-data.org. Útil para validar antes de subir a producción.
 
 ## Cómo funciona
 
-La pantalla de partidos normalmente lee de **api-football**. Para el dry-run
+La pantalla de partidos normalmente lee de **football-data.org**. Para el dry-run
 activamos un flag que la hace leer de la tabla `results` (donde sembramos
 partidos ficticios con kickoffs futuros). Así podemos:
 
@@ -15,7 +15,7 @@ partidos ficticios con kickoffs futuros). Así podemos:
 3. Verificar que el ranking (vista SQL `standings`) calcula bien los puntos.
 
 El flag es `FIXTURES_SOURCE=db` en `.env.local`. **Apagado (vacío) en
-producción** → la app usa api-football normalmente.
+producción** → la app usa football-data.org normalmente.
 
 ## Setup (una vez)
 
@@ -64,13 +64,12 @@ npm run dev:clear-fixtures       # borra los 99000x + sus predicciones
 | `npm run dev:standings` | Imprime la vista `standings` por consola |
 | `npm run dev:clear-fixtures` | Borra los partidos 99000x y sus predicciones |
 
-## Volver a modo producción (datos reales de api-football)
+## Volver a modo producción (datos reales de football-data.org)
 
-Cuando tengas la subscripción de api-football y quieras ver los partidos
-reales del Mundial:
+Cuando quieras ver los partidos reales del Mundial:
 
 1. En `.env.local`, **apagá el flag**: dejá `FIXTURES_SOURCE=` vacío (o borrá la línea).
-2. Confirmá `FOOTBALL_SEASON=2026` (requiere plan pago de api-football).
+2. Confirmá que `FOOTBALL_DATA_TOKEN` esté seteado (free tier cubre el Mundial).
 3. Reiniciá `npm run dev`.
 4. Poblá la tabla `results` con los fixtures reales: `npm run sync`.
    (En prod esto se corre periódicamente para traer horarios y resultados.)

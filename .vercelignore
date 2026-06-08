@@ -1,0 +1,12 @@
+# Secretos locales — los env vars vienen de la config del proyecto en Vercel
+.env*.local
+
+# Build local y artefactos
+.next
+tsconfig.tsbuildinfo
+
+# Docs / herramientas que no son parte del runtime
+SESION.md
+tests
+scripts/dev
+.claude

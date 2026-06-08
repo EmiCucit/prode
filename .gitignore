@@ -48,3 +48,5 @@ next-env.d.ts
 # local env — NUNCA commitear contraseñas ni keys
 .env.local
 .env.production.local
+
+.vercel

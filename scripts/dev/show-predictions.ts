@@ -35,7 +35,7 @@ async function main() {
     .order("fixture_id", { ascending: true });
   if (error) throw new Error(error.message);
 
-  const rows = (data ?? []) as Array<{
+  const rows = (data ?? []) as unknown as Array<{
     fixture_id: number;
     home_score: number;
     away_score: number;
