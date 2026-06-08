@@ -81,3 +81,38 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+// ── Web Push: mostrar notificación ─────────────────────────────────
+self.addEventListener("push", (event) => {
+  const data = (() => {
+    try {
+      return event.data?.json() ?? {};
+    } catch {
+      return {};
+    }
+  })() as { title?: string; body?: string; url?: string };
+
+  const title = data.title ?? "Prode Mundial 2026";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body ?? "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: data.url ?? "/partidos" },
+    }),
+  );
+});
+
+// ── Click en la notificación: enfocar/abrir la app ─────────────────
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data?.url as string) ?? "/partidos";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if (client.url.includes(url) && "focus" in client) return client.focus();
+      }
+      return self.clients.openWindow(url);
+    }),
+  );
+});
