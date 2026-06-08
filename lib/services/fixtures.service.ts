@@ -2,6 +2,9 @@ import type { Stage, MatchStatus } from "@/lib/data/types";
 
 const FD_BASE = "https://api.football-data.org/v4";
 const WORLD_CUP_CODE = "WC";
+// Placeholder para equipos de eliminatoria aún sin definir (football-data
+// manda name=null). Se usa para mapear y para ocultarlos de la vista.
+const UNDETERMINED_TEAM = "A definir";
 
 // ── Public type ────────────────────────────────────────────────────
 
@@ -133,8 +136,8 @@ function transform(m: FdMatch): Fixture {
   return {
     fixtureId: m.id,
     // En eliminatorias aún sin definir, football-data manda name=null.
-    homeTeam: { name: m.homeTeam.name ?? "A definir", logo: m.homeTeam.crest ?? "" },
-    awayTeam: { name: m.awayTeam.name ?? "A definir", logo: m.awayTeam.crest ?? "" },
+    homeTeam: { name: m.homeTeam.name ?? UNDETERMINED_TEAM, logo: m.homeTeam.crest ?? "" },
+    awayTeam: { name: m.awayTeam.name ?? UNDETERMINED_TEAM, logo: m.awayTeam.crest ?? "" },
     homeScore: m.score.fullTime.home,
     awayScore: m.score.fullTime.away,
     penaltyWinner: penaltyWinnerFrom(pens),
@@ -152,7 +155,13 @@ function transform(m: FdMatch): Fixture {
 // una sola llamada sin parámetros sirve a cualquier combinación de
 // filtros → comparte caché y minimiza requests contra el límite free).
 function applyFilters(fixtures: Fixture[], params: FetchFixturesParams): Fixture[] {
-  let out = fixtures;
+  // Las eliminatorias solo se muestran cuando ya están confirmados ambos
+  // equipos (football-data manda name=null → "A definir" en cruces sin definir).
+  let out = fixtures.filter(
+    (f) =>
+      f.stage !== "knockout" ||
+      (f.homeTeam.name !== UNDETERMINED_TEAM && f.awayTeam.name !== UNDETERMINED_TEAM),
+  );
   if (params.status) {
     const allowed = params.status.split("-");
     out = out.filter((f) => allowed.includes(f.status));
