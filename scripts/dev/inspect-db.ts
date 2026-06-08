@@ -37,6 +37,15 @@ async function main() {
   console.log(
     `  002 (penales): ${penErr ? `FALTA (${penErr.message})` : "OK (columnas presentes)"}`,
   );
+
+  // Migración 003: columna exact_with_bonus en la vista standings
+  const { error: bonusErr } = await db
+    .from("standings")
+    .select("exact_with_bonus")
+    .limit(1);
+  console.log(
+    `  003 (desglose): ${bonusErr ? `FALTA (${bonusErr.message})` : "OK (exact_with_bonus presente)"}`,
+  );
 }
 
 main().catch((err) => {
