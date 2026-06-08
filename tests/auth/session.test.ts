@@ -74,7 +74,7 @@ describe("cookies", () => {
     vi.unstubAllEnvs();
   });
 
-  it("makeSessionCookie: httpOnly, sameSite lax, path /, maxAge 7 días", () => {
+  it("makeSessionCookie: httpOnly, sameSite lax, path /, maxAge 90 días", () => {
     const c = makeSessionCookie("token-abc");
     expect(c).toMatchObject({
       name: "session",
@@ -82,7 +82,7 @@ describe("cookies", () => {
       httpOnly: true,
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 60 * 60 * 24 * 90,
     });
   });
 

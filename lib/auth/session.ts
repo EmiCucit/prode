@@ -7,7 +7,8 @@ export type SessionPayload = {
 };
 
 const COOKIE_NAME = "session";
-const MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 días
+const MAX_AGE_SECONDS = 60 * 60 * 24 * 90; // 90 días (se renueva sola, ver proxy.ts)
+const EXPIRATION = "90d";
 
 function getSecret(): Uint8Array {
   const secret = process.env["AUTH_SECRET"];
@@ -20,7 +21,7 @@ export async function signSession(payload: SessionPayload): Promise<string> {
   return new SignJWT({ userId: payload.userId, username: payload.username })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("7d")
+    .setExpirationTime(EXPIRATION)
     .sign(getSecret());
 }
 
