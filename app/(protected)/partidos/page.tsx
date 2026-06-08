@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import FilterBar from "@/components/molecules/FilterBar";
 import FixtureList from "@/components/organisms/FixtureList";
 import FixtureListSkeleton from "@/components/organisms/FixtureListSkeleton";
+import AutoRefresh from "@/components/atoms/AutoRefresh";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -29,6 +30,8 @@ export default async function PartidosPage({
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-6 space-y-5">
+      {/* Refresca marcadores en vivo cada 1 min sin recargar a mano */}
+      <AutoRefresh intervalMs={60_000} />
       <h1 className="text-xl font-bold text-foreground">Partidos</h1>
       <FilterBar />
       {/* key forces Suspense to re-show skeleton when filters change */}
