@@ -8,7 +8,7 @@ import RankingSkeleton from "@/components/organisms/RankingSkeleton";
 
 export const metadata = { title: "Ranking" };
 
-async function RankingContent() {
+async function RankingContent({ currentUserId }: { currentUserId: string }) {
   const rows    = await new StandingsRepository().getStandings();
   const players = buildRanking(rows);
 
@@ -20,7 +20,7 @@ async function RankingContent() {
     );
   }
 
-  return <RankingTable players={players} />;
+  return <RankingTable players={players} currentUserId={currentUserId} />;
 }
 
 export default async function RankingPage() {
@@ -31,7 +31,7 @@ export default async function RankingPage() {
     <main className="mx-auto max-w-2xl px-4 py-6 space-y-6">
       <h1 className="text-xl font-bold text-foreground">Ranking</h1>
       <Suspense fallback={<RankingSkeleton />}>
-        <RankingContent />
+        <RankingContent currentUserId={session.userId} />
       </Suspense>
     </main>
   );

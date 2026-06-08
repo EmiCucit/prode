@@ -136,7 +136,7 @@ npm run seed
 npm run dev              # Dev server con Turbopack (sin service worker)
 npm run build            # Build de producción (webpack, compila el service worker)
 npm run start            # Servidor de producción local
-npm test                 # 133 tests (dominio, servicios, auth, API, componentes, paridad SQL)
+npm test                 # 136 tests (dominio, servicios, auth, API, componentes, paridad SQL)
 npm run test:watch       # Vitest en modo watch
 npm run seed             # Inserta/actualiza los 10 usuarios en Supabase
 npm run sync             # Sincroniza fixtures de football-data.org a la tabla results
@@ -278,7 +278,7 @@ supabase/migrations/
 src/
   sw.ts              Service worker (compilado durante npm run build)
 
-tests/                133 tests Vitest
+tests/                136 tests Vitest
   domain/             scoring · cutoff · ranking (lógica pura)
   services/           fixtures · predictions
   auth/               session (JWT)

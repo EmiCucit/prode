@@ -3,7 +3,7 @@
 Lista de verificación previa a subir a producción. Cubre lo que los unit
 tests **no** pueden verificar (infra, env, BD real, PWA, seguridad, UX).
 
-> Tests automatizados: `npm test` (133 casos). Build: `npm run build`.
+> Tests automatizados: `npm test` (136 casos). Build: `npm run build`.
 > Ambos deben estar en verde antes de empezar este checklist.
 
 ---
@@ -97,7 +97,7 @@ Verificar que estén seteadas en el entorno de deploy (Vercel/host):
 ## 9. Build & deploy
 
 - [ ] `npm run build` en verde (sin errores de TypeScript ni de lint).
-- [ ] `npm test` en verde (133 tests).
+- [ ] `npm test` en verde (136 tests).
 - [ ] Deploy de prueba accesible por HTTPS.
 - [ ] `proxy.ts` (no `middleware.ts`) activo — rutas redirigen como se espera.
 - [ ] Assets estáticos y rutas del matcher excluidas correctamente del proxy.

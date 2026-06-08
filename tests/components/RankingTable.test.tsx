@@ -84,6 +84,26 @@ describe("RankingTable", () => {
     expect(within(fila).getByText("4")).toBeInTheDocument(); // ✓ Resultado
   });
 
+  it("resalta al usuario actual con el chip 'vos'", () => {
+    const players = [
+      row({ displayName: "Santi", userId: "u-santi" }),
+      row({ displayName: "Marian", userId: "u-marian" }),
+    ];
+
+    render(<RankingTable players={players} currentUserId="u-marian" />);
+
+    const marianRow = screen.getByText("Marian").closest("tr")!;
+    expect(within(marianRow).getByText("vos")).toBeInTheDocument();
+
+    const santiRow = screen.getByText("Santi").closest("tr")!;
+    expect(within(santiRow).queryByText("vos")).not.toBeInTheDocument();
+  });
+
+  it("sin currentUserId no resalta a nadie", () => {
+    render(<RankingTable players={[row({ displayName: "Santi", userId: "u-santi" })]} />);
+    expect(screen.queryByText("vos")).not.toBeInTheDocument();
+  });
+
   it("renderiza sin filas de jugadores cuando la lista está vacía", () => {
     render(<RankingTable players={[]} />);
     const bodyRows = screen.getAllByRole("row").slice(1);
