@@ -46,6 +46,13 @@ async function main() {
   console.log(
     `  003 (desglose): ${bonusErr ? `FALTA (${bonusErr.message})` : "OK (exact_with_bonus presente)"}`,
   );
+
+  // Migración 005: tablas de notificaciones push
+  const { error: pushErr } = await db.from("push_subscriptions").select("id").limit(1);
+  const { error: remErr } = await db.from("reminder_sent").select("fixture_id").limit(1);
+  console.log(
+    `  005 (push): ${pushErr || remErr ? `FALTA (${(pushErr ?? remErr)?.message})` : "OK (tablas presentes)"}`,
+  );
 }
 
 main().catch((err) => {
