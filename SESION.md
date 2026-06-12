@@ -222,3 +222,103 @@ probado en `dev` y promovido a `master` (prod).
   Node 24 (jun/2026) — se puede bumpear, no urge.
 - No cambiar la URL `prode-delta.vercel.app` ahora (rompería PWAs instaladas y
   suscripciones push, que son por-origen) — decidido dejarla así.
+
+---
+---
+
+# Sesión — 2026-06-11
+
+Primer día del Mundial. Los usuarios reportaron 3 fallas en prod; se
+diagnosticaron, se corrigieron y se sumó una feature al ranking. Todo probado
+en `dev` (Preview) y promovido a `master` (prod).
+
+## 1. Las 3 fallas reportadas y su causa
+
+- **Marcador no actualiza en vivo (baja)**: el free tier de football-data.org
+  no publica el marcador mientras el partido está en juego (`score.fullTime`
+  null). No es bug propio; limitación del plan.
+- **Resultado final 0–0 para algunos (alta)**: dos factores. (a) El proveedor
+  marca `FINISHED` antes de publicar el marcador → llega `score` null. (b)
+  `FixtureCard` renderizaba `{homeScore ?? 0}`, mostrando un **falso "0 — 0"**
+  indistinguible de un 0–0 real. Quien miraba temprano veía 0–0 sin puntos;
+  quien miraba tarde, el resultado correcto. No era por usuario sino por
+  **cuándo** miraban.
+- **Ranking en cero (altísima)**: el cron de GitHub Actions (nominal cada 10
+  min) en horas pico se disparaba **cada 2–4 h**; además un sync escribió `FT`
+  con `home_score` null, y la vista `standings` excluye filas con score null →
+  ranking en 0 aunque la pantalla de partidos (que lee del proveedor) ya
+  mostraba puntos.
+
+## 2. Lo que implementamos
+
+- **`FixtureCard`**: nunca mostrar un falso 0–0. Con score null muestra
+  `– — –` + leyenda ("Resultado pendiente de actualizar" en FT, "Marcador no
+  disponible" en vivo). Se corrigió además el `PointsBadge` para el caso de
+  **2 pts** (resultado acertado + bonus de penales), que antes se etiquetaba
+  mal como "Sin puntos".
+- **Sync confiable**: nuevo endpoint **`/api/cron/sync`** (route handler GET)
+  protegido por **`CRON_SECRET`** (header `Authorization: Bearer …` o
+  `?secret=`). La lógica se extrajo a `lib/services/sync.ts`, compartida por el
+  script `npm run sync` y el endpoint. `proxy.ts` deja pasar `/api/cron` sin
+  sesión (lo protege el secret).
+- **CI**: bump de `actions/checkout` y `actions/setup-node` a **v5** (Node 24)
+  en `sync.yml` y `reminders.yml` — GitHub forzaba Node 24 el 16/jun.
+- **Feature ranking — desglose por jugador**: ícono (chevron) en cada fila con
+  predicciones en partidos finalizados; al tocarlo (o la fila) despliega sus
+  predicciones vs. el resultado real con los puntos calculados, **ordenadas de
+  más reciente a más vieja, de a 5, con paginación** Anterior/Siguiente.
+  `RankingTable` pasó a client component; la data se arma server-side en
+  `lib/domain/breakdown.ts` (`buildBreakdowns`) y se pasa serializada. Se sumó
+  `PredictionsRepository.findAll()`.
+- **Texto "Último resultado calculado"** arriba del ranking: muestra el partido
+  finalizado más reciente (`latestFinishedResult` en `breakdown.ts`).
+- **Tests**: +11 (≈155 en total): `tests/domain/breakdown.test.ts`
+  (buildBreakdowns + latestFinishedResult) y expansión/paginación en
+  `RankingTable.test.tsx`.
+
+## 3. Salida a prod y configuración del cron externo
+
+- Commit en `dev` → merge ff a `master` → deploy de prod automático.
+- **`CRON_SECRET` seteado en Vercel** (Production + Preview/dev) por CLI.
+  Escollo: el primer `vercel env add` por pipe de PowerShell dejó el valor
+  **mangleado** (no coincidía) → endpoint daba 401. Se resolvió **re-agregando
+  el secret desde un archivo por redirección** (`cmd /c "vercel env add … <
+  file"`, bytes exactos sin newline) y **redeployando prod** (los env vars se
+  capturan por-deployment).
+- **Cron externo en cron-job.org** (plan de Vercel es **Hobby** → Vercel Cron
+  solo corre 1×/día, no sirve): GET a
+  `https://prode-delta.vercel.app/api/cron/sync` **cada 5 min** con el header
+  `Authorization: Bearer <CRON_SECRET>`. GitHub Actions queda de respaldo.
+- **Verificación**: logs de Vercel mostraron el 401→200 tras corregir el header
+  del cron, y el `updated_at` de `results` en prod avanza en cada corrida.
+
+## 4. Decisiones técnicas
+
+- **Endpoint + cron externo** en vez de depender solo de GitHub Actions: el
+  schedule de Actions se atrasa horas en horas pico; un cron dedicado cada 5
+  min es la fuente confiable, con Actions de red de seguridad.
+- **`CRON_SECRET` compatible con la convención de Vercel Cron** (Bearer
+  automático) por si en el futuro pasan a Pro: el endpoint ya funcionaría sin
+  cambios.
+- **Puntos calculados server-side** para el desglose (misma `calcPoints` del
+  ranking) y pasados serializados → el client solo pinta; sin lógica duplicada.
+- **Cargar todas las predicciones/resultados de una** para el ranking (~10
+  usuarios) en vez de lazy-load por usuario: dataset chico, sin endpoint extra
+  ni rate-limit.
+
+## 5. Estado al cierre
+
+- **Prod** (`prode-delta.vercel.app`): 3 fallas resueltas, feature del ranking
+  live, sync cada 5 min vía cron-job.org (verificado 200 + `updated_at`
+  avanzando). `CRON_SECRET` en Vercel (Prod + Preview/dev).
+- **Calidad**: `npm test` (~155) y `npm run build` en verde.
+- **Limpieza**: predicciones de demo borradas de dev
+  (`npm run dev:clear-predictions`), server local frenado.
+
+## 6. Pendientes / notas
+
+- **Marcador en vivo**: sin fix gratis (limitación del free tier). El `– — –`
+  evita la confusión; para live scores reales haría falta un tier pago.
+- Si algún día pasan a **Vercel Pro**: se puede mover el cron a `vercel.json`
+  (`crons: [{ path: "/api/cron/sync", schedule: "*/5 * * * *" }]`) y desactivar
+  cron-job.org y/o el de GitHub Actions.
