@@ -25,8 +25,9 @@ App de predicciones del Mundial para grupo cerrado de ~10 amigos.
 - Migraciones SQL: 001 inicial · 002 penales · 003 desglose (`exact_with_bonus`) · 004 cutoff 10min · 005 push. DDL se aplica a mano en el SQL Editor (dev y prod)
 - Deploy por Git en Vercel: `dev` → Preview (Supabase dev), `master` → Production (Supabase prod). Env vars por scope
 - Sync de resultados: **cron externo (cron-job.org) cada 5 min** pega a `/api/cron/sync` (protegido por `CRON_SECRET`, header `Authorization: Bearer …` o `?secret=`). GitHub Actions `sync.yml` (~10 min) queda de respaldo. Plan Vercel Hobby → Vercel Cron no sirve (1×/día)
-- Crons en GitHub Actions: `sync.yml` (respaldo de resultados, ~10 min) y `reminders.yml` (push 2 h antes, 30 min)
-- Lógica de sync compartida en `lib/services/sync.ts` (la usan el script `npm run sync` y el endpoint `/api/cron/sync`)
+- Recordatorios push: **cron externo (cron-job.org) cada 15 min** pega a `/api/cron/reminders` (mismo `CRON_SECRET`; override de ventana con `?lead_hours=`). GitHub Actions `reminders.yml` (30 min) queda de respaldo — **el schedule de Actions se atrasa horas y se salteaba la ventana de 2 h** (por eso nunca llegaban los avisos)
+- Crons en GitHub Actions (solo respaldo): `sync.yml` (~10 min) y `reminders.yml` (30 min)
+- Lógica compartida en `lib/services/sync.ts` y `lib/services/reminders.ts` (las usan los scripts `npm run sync` / `npm run reminders` y los endpoints `/api/cron/sync` / `/api/cron/reminders`)
 - Push (Web Push/VAPID): suscripción en `/api/push/subscribe`, envío en `lib/push/webpush.ts`. En iOS requiere la PWA instalada (16.4+)
 
 ## Pasos completados
@@ -59,6 +60,9 @@ App de predicciones del Mundial para grupo cerrado de ~10 amigos.
 - [x] Texto "Último resultado calculado" arriba del ranking
 - [x] CI: bump de actions a v5 (Node 24)
 - Detalle completo en `SESION.md` (sesión 2026-06-11)
+
+## Recordatorios confiables (sesión 2026-06-12)
+- [x] Fix: los recordatorios push no llegaban en prod porque corrían **solo** por GitHub Actions, cuyo schedule se atrasa 2–4 h y se saltea la ventana de 2 h. Solución: endpoint `/api/cron/reminders` + cron externo (mismo patrón que `sync`)
 
 ## Comandos
 - `npm run dev` — desarrollo

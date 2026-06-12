@@ -322,3 +322,52 @@ en `dev` (Preview) y promovido a `master` (prod).
 - Si algún día pasan a **Vercel Pro**: se puede mover el cron a `vercel.json`
   (`crons: [{ path: "/api/cron/sync", schedule: "*/5 * * * *" }]`) y desactivar
   cron-job.org y/o el de GitHub Actions.
+
+---
+---
+
+# Sesión — 2026-06-12
+
+Reporte: **los recordatorios push no llegaban en prod**. Se probó dejando un
+partido sin predicción y esperando a <1 h del kickoff; nunca llegó el aviso.
+(En dev el envío sí andaba — se probaba con el botón "Probar".)
+
+## 1. Diagnóstico
+
+- Las suscripciones de prod estaban OK (todos los usuarios adheridos) → no era
+  eso.
+- Causa raíz: **los recordatorios corrían únicamente por GitHub Actions**
+  (`reminders.yml`, nominal cada 30 min), que es justo el cron poco confiable
+  que ya nos había roto el `sync`. `gh run list` confirmó intervalos reales de
+  **2 a 4½ horas** entre corridas (no 30 min).
+- Con `REMINDER_LEAD_HOURS=2`, un partido solo es elegible mientras falten ≤2 h
+  y siga en `status=NS`. Si entre `kickoff−2h` y el kickoff no cae ninguna
+  corrida, el partido cruza toda la ventana sin aviso; cuando arranca, el sync
+  lo pasa a `1H`/live y el query `eq("status","NS")` lo excluye → **el
+  recordatorio se pierde para siempre**.
+
+## 2. Fix (mismo patrón que el `sync`)
+
+- Lógica extraída a `lib/services/reminders.ts` (`sendReminders({ leadHours? })`,
+  devuelve un `ReminderSummary`), compartida por el script y el endpoint.
+- Nuevo endpoint **`/api/cron/reminders`** (GET, `force-dynamic`) protegido por
+  **`CRON_SECRET`** (header `Authorization: Bearer …` o `?secret=`). Override de
+  ventana opcional para pruebas: `?lead_hours=6`. `proxy.ts` ya deja pasar
+  `/api/cron`.
+- `scripts/send-reminders.ts` reescrito para consumir el servicio (igual que
+  `sync-fixtures.ts`); GitHub Actions queda de **respaldo**, no como fuente
+  principal.
+
+## 3. Calidad
+
+- `npx tsc --noEmit` limpio, `eslint` limpio, `npm test` → **147 tests** en
+  verde.
+
+## 4. Pendiente (manual, fuera del código)
+
+- **Crear el cron en cron-job.org** apuntando a
+  `https://prode-delta.vercel.app/api/cron/reminders` cada **15 min** con header
+  `Authorization: Bearer <CRON_SECRET>` (clonar el job del `sync` y cambiarle la
+  URL + intervalo).
+- Deploy: commit en `dev` → merge a `master` (el endpoint debe estar live en
+  prod **antes** de que el cron lo pegue).
