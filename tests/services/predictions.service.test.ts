@@ -45,6 +45,7 @@ class FakeResultsRepo implements IResultsRepository {
 
 class FakePredictionsRepo implements IPredictionsRepository {
   upsert = vi.fn<(p: UpsertPredictionParams) => Promise<void>>(async () => {});
+  findAll = vi.fn<() => Promise<DbPrediction[]>>(async () => []);
   findByUser = vi.fn<() => Promise<DbPrediction[]>>(async () => []);
   findByUserAndFixture = vi.fn<() => Promise<DbPrediction | null>>(async () => null);
   findAllForFixture = vi.fn<() => Promise<DbPrediction[]>>(async () => []);

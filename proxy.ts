@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify, SignJWT, type JWTPayload } from "jose";
 
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/auth/logout"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/api/auth/login",
+  "/api/auth/logout",
+  "/api/cron", // protegido por CRON_SECRET, no por sesión
+];
 const COOKIE_NAME = "session";
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 90; // 90 días
 const EXPIRATION = "90d";

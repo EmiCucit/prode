@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach } from "vitest";
-import { render, screen, cleanup, within } from "@testing-library/react";
+import { render, screen, cleanup, within, fireEvent } from "@testing-library/react";
 import RankingTable from "@/components/organisms/RankingTable";
 import type { StandingRow } from "@/lib/domain/ranking";
+import type { FinishedPrediction } from "@/lib/domain/breakdown";
 
 afterEach(cleanup);
 
@@ -17,6 +18,25 @@ function row(over: Partial<StandingRow> & { displayName: string }): StandingRow 
     correctOutcomes: over.correctOutcomes ?? 0,
     predictionsMade: over.predictionsMade ?? 0,
   };
+}
+
+function finished(n: number): FinishedPrediction[] {
+  return Array.from({ length: n }, (_, i) => ({
+    fixtureId: i + 1,
+    homeTeamName: `Local${i + 1}`,
+    awayTeamName: `Visita${i + 1}`,
+    homeScore: 1,
+    awayScore: 0,
+    penaltyWinner: null,
+    predHomeScore: 1,
+    predAwayScore: 0,
+    predPenaltyWinner: null,
+    points: 3,
+    kickoffAt: `2026-06-${String(i + 1).padStart(2, "0")}T19:00:00Z`,
+    stage: "group" as const,
+    round: "Fase de grupos",
+    groupName: "A",
+  }));
 }
 
 describe("RankingTable", () => {
@@ -108,5 +128,54 @@ describe("RankingTable", () => {
     render(<RankingTable players={[]} />);
     const bodyRows = screen.getAllByRole("row").slice(1);
     expect(bodyRows).toHaveLength(0);
+  });
+
+  it("sin desglose no muestra el botón de expandir", () => {
+    render(<RankingTable players={[row({ displayName: "Santi", userId: "u1" })]} />);
+    expect(screen.queryByLabelText("Ver predicciones")).not.toBeInTheDocument();
+  });
+
+  it("toca el ícono y despliega las predicciones de partidos finalizados", () => {
+    render(
+      <RankingTable
+        players={[row({ displayName: "Santi", userId: "u1" })]}
+        breakdowns={{ u1: finished(3) }}
+      />,
+    );
+
+    // Colapsado: no se ven las predicciones
+    expect(screen.queryByText(/Tu predicción/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText("Ver predicciones"));
+
+    // Expandido: aparecen las 3 predicciones
+    expect(screen.getAllByText(/Tu predicción/)).toHaveLength(3);
+    // Toggle inverso: vuelve a ocultar
+    fireEvent.click(screen.getByLabelText("Ocultar predicciones"));
+    expect(screen.queryByText(/Tu predicción/)).not.toBeInTheDocument();
+  });
+
+  it("pagina de a 5 partidos y navega con Siguiente/Anterior", () => {
+    render(
+      <RankingTable
+        players={[row({ displayName: "Santi", userId: "u1" })]}
+        breakdowns={{ u1: finished(7) }}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText("Ver predicciones"));
+
+    // Página 1: 5 de 7
+    expect(screen.getAllByText(/Tu predicción/)).toHaveLength(5);
+    expect(screen.getByText("1–5 de 7")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Siguiente"));
+
+    // Página 2: las 2 restantes
+    expect(screen.getAllByText(/Tu predicción/)).toHaveLength(2);
+    expect(screen.getByText("6–7 de 7")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Anterior"));
+    expect(screen.getByText("1–5 de 7")).toBeInTheDocument();
   });
 });

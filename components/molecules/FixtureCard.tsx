@@ -9,22 +9,30 @@ import type { DbPrediction } from "@/lib/data/types";
 const FINISHED = new Set(["FT", "AET", "PEN"]);
 
 function PointsBadge({ pts }: { pts: number }) {
+  // Puntajes posibles: 0, 1, 3 (base) + 0/1 de bonus por penales → 0,1,2,3,4.
+  const label =
+    pts === 4
+      ? "⭐ Exacto + pen"
+      : pts === 3
+        ? "⭐ Exacto"
+        : pts === 2
+          ? "✓ Resultado + pen"
+          : pts === 1
+            ? "✓ Resultado"
+            : "✗ Sin puntos";
+
   return (
     <span
       className={cn(
         "text-xs font-semibold",
         pts === 4 && "text-celeste",
         pts === 3 && "text-green-400",
+        pts === 2 && "text-emerald-400",
         pts === 1 && "text-yellow-400",
         pts === 0 && "text-muted-foreground",
       )}
     >
-      {pts === 3 || pts === 4
-        ? "⭐ Exacto"
-        : pts === 1
-          ? "✓ Resultado"
-          : "✗ Sin puntos"}
-      {" "}({pts} pt{pts !== 1 ? "s" : ""})
+      {label} ({pts} pt{pts !== 1 ? "s" : ""})
     </span>
   );
 }
@@ -69,6 +77,10 @@ export default function FixtureCard({ fixture, prediction }: Props) {
   const isFinished = FINISHED.has(status);
   const isLive = ["1H", "2H", "ET", "P", "HT", "BT"].includes(status);
   const isOpenInitial = isPredictionOpen(new Date(kickoffAt));
+  // football-data (free tier) a veces marca el partido como FINISHED o
+  // IN_PLAY antes de publicar el marcador → score null. Distinguir esto de
+  // un 0–0 real es clave: nunca mostrar "0 — 0" cuando todavía no hay dato.
+  const hasScore = homeScore !== null && awayScore !== null;
 
   const pts =
     isFinished && prediction && homeScore !== null && awayScore !== null
@@ -103,8 +115,13 @@ export default function FixtureCard({ fixture, prediction }: Props) {
           {isLive || isFinished ? (
             <>
               <span className="text-2xl font-bold tabular-nums">
-                {homeScore ?? 0} — {awayScore ?? 0}
+                {hasScore ? `${homeScore} — ${awayScore}` : "– — –"}
               </span>
+              {!hasScore && (
+                <span className="text-[11px] text-muted-foreground text-center leading-tight">
+                  {isFinished ? "Resultado pendiente de actualizar" : "Marcador no disponible"}
+                </span>
+              )}
               {penaltyWinner && (
                 <span className="text-xs text-muted-foreground">
                   {penaltyHomeScore !== null && penaltyAwayScore !== null ? (

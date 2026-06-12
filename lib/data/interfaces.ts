@@ -11,6 +11,7 @@ export interface UpsertPredictionParams {
 
 export interface IPredictionsRepository {
   upsert(params: UpsertPredictionParams): Promise<void>;
+  findAll(): Promise<DbPrediction[]>;
   findByUser(userId: string): Promise<DbPrediction[]>;
   findByUserAndFixture(userId: string, fixtureId: number): Promise<DbPrediction | null>;
   findAllForFixture(fixtureId: number): Promise<DbPrediction[]>;

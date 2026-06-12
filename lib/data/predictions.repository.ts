@@ -19,6 +19,13 @@ export class PredictionsRepository implements IPredictionsRepository {
     if (error) throw new Error(`upsert prediction: ${error.message}`);
   }
 
+  async findAll(): Promise<DbPrediction[]> {
+    const db = createServerClient();
+    const { data, error } = await db.from("predictions").select("*");
+    if (error) throw new Error(`findAll predictions: ${error.message}`);
+    return (data ?? []) as DbPrediction[];
+  }
+
   async findByUser(userId: string): Promise<DbPrediction[]> {
     const db = createServerClient();
     const { data, error } = await db
