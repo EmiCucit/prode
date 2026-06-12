@@ -363,11 +363,37 @@ partido sin predicción y esperando a <1 h del kickoff; nunca llegó el aviso.
 - `npx tsc --noEmit` limpio, `eslint` limpio, `npm test` → **147 tests** en
   verde.
 
-## 4. Pendiente (manual, fuera del código)
+## 4. Deploy y cron (hecho)
 
-- **Crear el cron en cron-job.org** apuntando a
-  `https://prode-delta.vercel.app/api/cron/reminders` cada **15 min** con header
-  `Authorization: Bearer <CRON_SECRET>` (clonar el job del `sync` y cambiarle la
-  URL + intervalo).
-- Deploy: commit en `dev` → merge a `master` (el endpoint debe estar live en
-  prod **antes** de que el cron lo pegue).
+- Commit `a10dee0` en `dev` → push → merge **ff** a `master` → push. Ambos
+  deploys de Vercel disparados por el push (Preview dev + Production).
+- **Smoke test de los endpoints** (sin auth → debe dar 401 *nuestro*, no 404 ni
+  la pantalla de Vercel):
+  - Prod: `{"error":"No autorizado"}` HTTP 401 → ruta viva y pública. OK.
+  - Dev (Preview): al principio devolvía la pantalla **"Authentication
+    Required"** de Vercel (cookie `_vercel_sso_nonce`) → el Preview tenía
+    **Deployment Protection / Vercel Authentication activa** (estaba prendida,
+    aunque se creía apagada). cron-job.org no podía llegarle.
+- **Se apagó Vercel Authentication en el entorno Preview** (temporal, para la
+  prueba) → dev pasó a devolver nuestro 401 sin cookie SSO.
+- **Dos cron jobs creados en cron-job.org** (clonando el del `sync`, mismo
+  `CRON_SECRET` en el header), cada 15 min:
+  - **PROD** → `https://prode-delta.vercel.app/api/cron/reminders` (ventana 2 h
+    por default).
+  - **DEV (test)** →
+    `https://prode-git-dev-emicucits-projects.vercel.app/api/cron/reminders?lead_hours=4`
+    (ventana 4 h vía query param, sin tocar env vars ni código).
+- **Verificado en los logs de Vercel** que ambos pegan y autentican:
+  `GET /api/cron/reminders 200` tanto en prod (11:35) como en dev (11:36). El
+  bug original queda resuelto: el disparo ya no depende del scheduler atrasado
+  de GitHub Actions (que queda solo de respaldo).
+
+## 5. Pendiente
+
+- **Prueba de entrega end-to-end en dev**: con `?lead_hours=4`, dejar una
+  suscripción push activa + un partido `NS` que arranque dentro de 4 h sin
+  predicción de ese usuario, y confirmar que el push **llega al dispositivo**
+  (el `200` confirma que corre, pero `sent` puede ser 0 sin elegibles).
+- **Cleanup post-prueba**: volver a **prender Vercel Authentication** en el
+  Preview (dev) y **pausar/borrar** el job de dev en cron-job.org. El de prod
+  queda corriendo.
