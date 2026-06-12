@@ -388,12 +388,28 @@ partido sin predicción y esperando a <1 h del kickoff; nunca llegó el aviso.
   bug original queda resuelto: el disparo ya no depende del scheduler atrasado
   de GitHub Actions (que queda solo de respaldo).
 
-## 5. Pendiente
+## 5. Prueba end-to-end y cleanup (hecho)
 
-- **Prueba de entrega end-to-end en dev**: con `?lead_hours=4`, dejar una
-  suscripción push activa + un partido `NS` que arranque dentro de 4 h sin
-  predicción de ese usuario, y confirmar que el push **llega al dispositivo**
-  (el `200` confirma que corre, pero `sent` puede ser 0 sin elegibles).
-- **Cleanup post-prueba**: volver a **prender Vercel Authentication** en el
-  Preview (dev) y **pausar/borrar** el job de dev en cron-job.org. El de prod
-  queda corriendo.
+- **Prueba de entrega validada en dev**: con el usuario `chispa` (notis
+  prendidas) y un partido `NS` que arrancaba dentro de la ventana de 4 h sin
+  predicción suya, el push **llegó al dispositivo** en la corrida natural del
+  cron (camino real cron-job.org → endpoint → `sendReminders` → Web Push, no el
+  botón "Probar"). Fix validado de punta a punta.
+- **Cleanup hecho**:
+  - Fixtures demo sembrados para la prueba eliminados (`npm
+    run dev:clear-fixtures`, 8 partidos 99000x).
+  - **Vercel Authentication reactivada** en el Preview (dev) — verificado:
+    vuelve a devolver la pantalla "Authentication Required" + cookie
+    `_vercel_sso_nonce`.
+  - **Job de dev borrado** en cron-job.org. Queda solo el de **prod** (cada
+    15 min, ventana 2 h), verificado vivo (`{"error":"No autorizado"}` sin auth).
+  - Se dejó el `reminder_sent` de chispa para ese partido (dedup real); solo
+    importaría para re-probar el **mismo** partido en dev.
+
+## 6. Estado al cierre
+
+- **Recordatorios push arreglados y en prod**: disparo confiable vía cron
+  externo cada 15 min; GitHub Actions queda solo de respaldo. Validado
+  end-to-end.
+- `master` y `dev` en `c3027a1` + esta entrada de bitácora. Calidad: 147 tests
+  y build en verde.
