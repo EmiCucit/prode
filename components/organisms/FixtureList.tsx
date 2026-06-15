@@ -4,6 +4,7 @@ import { PredictionsRepository } from "@/lib/data/predictions.repository";
 import { dateKey, formatMatchDate } from "@/lib/utils";
 import FixtureCard from "@/components/molecules/FixtureCard";
 import type { Fixture } from "@/lib/services/fixtures.service";
+import { LIVE_STATUSES } from "@/lib/data/types";
 
 const STATUS_API_MAP: Record<string, string> = {
   upcoming: "NS",
@@ -11,12 +12,16 @@ const STATUS_API_MAP: Record<string, string> = {
   finished: "FT-AET-PEN",
 };
 
+const LIVE = new Set<string>(LIVE_STATUSES);
+
 interface Filters {
   status?: string;
   date?: string;
 }
 
-function groupByDate(fixtures: Fixture[]) {
+// `desc` ordena de más reciente a más viejo: lo usamos en finalizados para
+// listarlos por orden de finalización (aprox. por kickoff, descendente).
+function groupByDate(fixtures: Fixture[], desc = false) {
   const map = new Map<string, Fixture[]>();
   for (const f of fixtures) {
     const k = dateKey(f.kickoffAt);
@@ -24,8 +29,14 @@ function groupByDate(fixtures: Fixture[]) {
     map.get(k)!.push(f);
   }
   return [...map.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([, list]) => list);
+    .sort(([a], [b]) => (desc ? b.localeCompare(a) : a.localeCompare(b)))
+    .map(([, list]) =>
+      [...list].sort((x, y) =>
+        desc
+          ? y.kickoffAt.localeCompare(x.kickoffAt)
+          : x.kickoffAt.localeCompare(y.kickoffAt),
+      ),
+    );
 }
 
 export default async function FixtureList({ filters }: { filters: Filters }) {
@@ -38,13 +49,21 @@ export default async function FixtureList({ filters }: { filters: Filters }) {
   // Revalidate frequently for live matches
   const revalidate = filters.status === "live" ? 15 : 60;
 
+  const predictionsRepo = new PredictionsRepository();
   const [fixtures, predictions] = await Promise.all([
     fetchFixtures({ status: apiStatus, date: filters.date }, revalidate),
-    new PredictionsRepository().findByUser(session.userId),
+    predictionsRepo.findByUser(session.userId),
   ]);
 
   const predMap = new Map(predictions.map((p) => [p.fixture_id, p]));
-  const groups = groupByDate(fixtures);
+
+  // Las predicciones de todos se revelan solo mientras el partido está en curso.
+  // Traemos únicamente las de esos fixtures para no cargar de más.
+  const revealIds = fixtures.filter((f) => LIVE.has(f.status)).map((f) => f.fixtureId);
+  const reveals = await predictionsRepo.findRevealedForFixtures(revealIds);
+
+  // Finalizados: del más reciente al más viejo (por orden de finalización).
+  const groups = groupByDate(fixtures, filters.status === "finished");
 
   if (fixtures.length === 0) {
     return (
@@ -70,6 +89,8 @@ export default async function FixtureList({ filters }: { filters: Filters }) {
                   key={fixture.fixtureId}
                   fixture={fixture}
                   prediction={predMap.get(fixture.fixtureId) ?? null}
+                  revealedPredictions={reveals.get(fixture.fixtureId) ?? []}
+                  currentUserId={session.userId}
                 />
               ))}
             </div>

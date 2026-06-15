@@ -6,6 +6,9 @@ export type MatchStatus =
   | "SUSP" | "INT" | "ABD" | "AWD" | "WO";
 
 export const FINISHED_STATUSES: MatchStatus[] = ["FT", "AET", "PEN"];
+// Partido "en curso": el proveedor no distingue el tiempo exacto, así que
+// agrupamos todos los estados de juego activo (incluye entretiempo).
+export const LIVE_STATUSES: MatchStatus[] = ["1H", "HT", "2H", "ET", "BT", "P"];
 
 export interface DbUser {
   id: string;
@@ -44,6 +47,20 @@ export interface DbPrediction {
   penalty_winner: PenaltyWinner | null;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Predicción de un jugador lista para revelarse en la pantalla de partidos
+ * (solo mientras el partido está en curso), con el nombre del jugador.
+ * Serializable para pasarse de un Server Component a la UI.
+ */
+export interface RevealedPrediction {
+  userId: string;
+  displayName: string;
+  avatarKey: string;
+  homeScore: number;
+  awayScore: number;
+  penaltyWinner: PenaltyWinner | null;
 }
 
 export interface DbStandingRow {

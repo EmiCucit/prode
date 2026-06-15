@@ -1,5 +1,5 @@
 import type { StandingRow } from "@/lib/domain/ranking";
-import type { DbPrediction, DbResult, PenaltyWinner } from "@/lib/data/types";
+import type { DbPrediction, DbResult, PenaltyWinner, RevealedPrediction } from "@/lib/data/types";
 
 export interface UpsertPredictionParams {
   userId: string;
@@ -15,6 +15,7 @@ export interface IPredictionsRepository {
   findByUser(userId: string): Promise<DbPrediction[]>;
   findByUserAndFixture(userId: string, fixtureId: number): Promise<DbPrediction | null>;
   findAllForFixture(fixtureId: number): Promise<DbPrediction[]>;
+  findRevealedForFixtures(fixtureIds: number[]): Promise<Map<number, RevealedPrediction[]>>;
 }
 
 export interface IResultsRepository {

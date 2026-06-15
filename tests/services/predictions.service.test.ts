@@ -5,7 +5,7 @@ import type {
   IResultsRepository,
   UpsertPredictionParams,
 } from "@/lib/data/interfaces";
-import type { DbResult, DbPrediction, Stage } from "@/lib/data/types";
+import type { DbResult, DbPrediction, Stage, RevealedPrediction } from "@/lib/data/types";
 
 // ── Fakes en memoria ──────────────────────────────────────────────
 
@@ -49,6 +49,9 @@ class FakePredictionsRepo implements IPredictionsRepository {
   findByUser = vi.fn<() => Promise<DbPrediction[]>>(async () => []);
   findByUserAndFixture = vi.fn<() => Promise<DbPrediction | null>>(async () => null);
   findAllForFixture = vi.fn<() => Promise<DbPrediction[]>>(async () => []);
+  findRevealedForFixtures = vi.fn<() => Promise<Map<number, RevealedPrediction[]>>>(
+    async () => new Map(),
+  );
 }
 
 function makeService(fixture: DbResult | null) {

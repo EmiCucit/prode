@@ -44,15 +44,13 @@ export default function FilterBar() {
   const sp        = useSearchParams();
   const [pending, startTransition] = useTransition();
 
-  const currentStatus = sp.get("status") ?? null;
+  // Sin filtro en la URL → "Próximos" por defecto (igual que la página).
+  const currentStatus = sp.get("status") ?? "upcoming";
 
-  function toggleStatus(value: string) {
+  function selectStatus(value: string) {
+    if (value === currentStatus) return;
     const next = new URLSearchParams(sp.toString());
-    if (next.get("status") === value) {
-      next.delete("status");
-    } else {
-      next.set("status", value);
-    }
+    next.set("status", value);
     startTransition(() => router.push(`${pathname}?${next.toString()}`));
   }
 
@@ -62,7 +60,7 @@ export default function FilterBar() {
         <Pill
           key={value}
           active={currentStatus === value}
-          onClick={() => toggleStatus(value)}
+          onClick={() => selectStatus(value)}
           pending={pending}
         >
           {label}

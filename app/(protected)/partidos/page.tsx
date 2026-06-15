@@ -24,7 +24,8 @@ export default async function PartidosPage({
 
   const sp = await searchParams;
   const filters = {
-    status: str(sp["status"]),
+    // Al entrar (sin filtro en la URL) se muestran los próximos por defecto.
+    status: str(sp["status"]) ?? "upcoming",
     date:   str(sp["date"]),
   };
 

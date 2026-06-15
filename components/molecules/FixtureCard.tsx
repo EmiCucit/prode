@@ -3,8 +3,10 @@ import { calcPoints } from "@/lib/domain/scoring";
 import { isPredictionOpen } from "@/lib/domain/cutoff";
 import StatusBadge from "@/components/atoms/StatusBadge";
 import PredictionForm from "@/components/molecules/PredictionForm";
+import PredictionsReveal from "@/components/molecules/PredictionsReveal";
 import type { Fixture } from "@/lib/services/fixtures.service";
-import type { DbPrediction } from "@/lib/data/types";
+import { LIVE_STATUSES } from "@/lib/data/types";
+import type { DbPrediction, RevealedPrediction } from "@/lib/data/types";
 
 const FINISHED = new Set(["FT", "AET", "PEN"]);
 
@@ -65,9 +67,17 @@ function TeamLogo({ logo, name }: { logo: string; name: string }) {
 interface Props {
   fixture: Fixture;
   prediction: DbPrediction | null;
+  /** Predicciones de todos los jugadores, ya reveladas (< 1 h del kickoff). */
+  revealedPredictions?: RevealedPrediction[];
+  currentUserId?: string;
 }
 
-export default function FixtureCard({ fixture, prediction }: Props) {
+export default function FixtureCard({
+  fixture,
+  prediction,
+  revealedPredictions = [],
+  currentUserId,
+}: Props) {
   const {
     fixtureId, homeTeam, awayTeam, homeScore, awayScore,
     penaltyWinner, penaltyHomeScore, penaltyAwayScore,
@@ -75,8 +85,11 @@ export default function FixtureCard({ fixture, prediction }: Props) {
   } = fixture;
 
   const isFinished = FINISHED.has(status);
-  const isLive = ["1H", "2H", "ET", "P", "HT", "BT"].includes(status);
+  const isLive = (LIVE_STATUSES as readonly string[]).includes(status);
   const isOpenInitial = isPredictionOpen(new Date(kickoffAt));
+  // Las predicciones de todos se revelan solo mientras el partido está en curso
+  // (ya cerradas las cargas) y desaparecen al finalizar, que muestra el resultado.
+  const showReveal = isLive;
   // football-data (free tier) a veces marca el partido como FINISHED o
   // IN_PLAY antes de publicar el marcador → score null. Distinguir esto de
   // un 0–0 real es clave: nunca mostrar "0 — 0" cuando todavía no hay dato.
@@ -157,7 +170,7 @@ export default function FixtureCard({ fixture, prediction }: Props) {
           prediction ? (
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-xs text-muted-foreground">
-                Tu predicción:{" "}
+                Tu redicción:{" "}
                 <span className="font-semibold text-foreground">
                   {prediction.home_score}–{prediction.away_score}
                   {prediction.penalty_winner &&
@@ -169,6 +182,13 @@ export default function FixtureCard({ fixture, prediction }: Props) {
           ) : (
             <p className="text-xs text-muted-foreground">Sin predicción</p>
           )
+        ) : showReveal ? (
+          <PredictionsReveal
+            items={revealedPredictions}
+            currentUserId={currentUserId}
+            homeTeamName={homeTeam.name}
+            awayTeamName={awayTeam.name}
+          />
         ) : (
           <PredictionForm
             fixtureId={fixtureId}
