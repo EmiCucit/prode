@@ -22,6 +22,7 @@ App de predicciones del Mundial para grupo cerrado de ~10 amigos.
 - Puntos NO se guardan en BD: se calculan en la vista SQL `standings`
 - football-data.org v4: competición WC, auth `X-Auth-Token`, proxy en `app/api/fixtures/route.ts`
 - Cutoff de predicción: **10 min** antes del kickoff (`lib/domain/cutoff.ts` + RLS migración 004) — mantener ambos en sync
+- Revelar predicciones de todos: solo mientras el partido está **en curso** (`isLive`, `LIVE_STATUSES`), desplegable cerrado por defecto (`PredictionsReveal.tsx`); datos vía `PredictionsRepository.findRevealedForFixtures`
 - Migraciones SQL: 001 inicial · 002 penales · 003 desglose (`exact_with_bonus`) · 004 cutoff 10min · 005 push. DDL se aplica a mano en el SQL Editor (dev y prod)
 - Deploy por Git en Vercel: `dev` → Preview (Supabase dev), `master` → Production (Supabase prod). Env vars por scope
 - Sync de resultados: **cron externo (cron-job.org) cada 5 min** pega a `/api/cron/sync` (protegido por `CRON_SECRET`, header `Authorization: Bearer …` o `?secret=`). GitHub Actions `sync.yml` (~10 min) queda de respaldo. Plan Vercel Hobby → Vercel Cron no sirve (1×/día)
@@ -63,6 +64,12 @@ App de predicciones del Mundial para grupo cerrado de ~10 amigos.
 
 ## Recordatorios confiables (sesión 2026-06-12)
 - [x] Fix: los recordatorios push no llegaban en prod porque corrían **solo** por GitHub Actions, cuyo schedule se atrasa 2–4 h y se saltea la ventana de 2 h. Solución: endpoint `/api/cron/reminders` + cron externo (mismo patrón que `sync`)
+
+## Partidos: revelar predicciones + filtros (sesión 2026-06-15)
+- [x] Desplegable (cerrado por defecto) con las predicciones de todos, visible **solo con el partido en curso**; la propia resaltada y primera (`PredictionsReveal.tsx` + `findRevealedForFixtures`)
+- [x] Filtro **"Próximos" por defecto** al entrar a `/partidos`; pills siempre seleccionan (sin toggle-off ni vista "Todos")
+- [x] **Finalizados ordenados por finalización** (kickoff desc como proxy); resto cronológico ascendente
+- [x] Probado en prod (OK). Detalle en `SESION.md` (sesión 2026-06-15)
 
 ## Comandos
 - `npm run dev` — desarrollo

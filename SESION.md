@@ -413,3 +413,51 @@ partido sin predicción y esperando a <1 h del kickoff; nunca llegó el aviso.
   end-to-end.
 - `master` y `dev` en `c3027a1` + esta entrada de bitácora. Calidad: 147 tests
   y build en verde.
+
+---
+
+# Sesión — 2026-06-15
+
+Pantalla de **Partidos**: revelar las predicciones de todos durante el partido y
+dos ajustes de usabilidad (filtro por defecto y orden de finalizados).
+
+## 1. Revelar predicciones de todos
+
+- En la tarjeta de partido, un **desplegable "Predicciones (N)" cerrado por
+  defecto** lista lo que cargó cada jugador (marcador y, en eliminatorias, el
+  ganador por penales). La predicción propia se resalta y va primero.
+- **Visible solo mientras el partido está en curso** (`isLive`): antes del
+  kickoff se sigue mostrando el formulario (cerrado tras el cutoff de 10 min) y
+  al finalizar la tarjeta vuelve a mostrar tu predicción + puntos. Una primera
+  versión lo revelaba por tiempo (`REVEAL_MINUTES` antes del kickoff); se
+  descartó a pedido: ahora depende del estado "en curso", no de un umbral.
+- Datos: nuevo `PredictionsRepository.findRevealedForFixtures(ids)` (join con
+  `users`, agrupado por fixture, ordenado por nombre); se trae **solo** para los
+  fixtures en curso. `FixtureList` (server) pasa la lista a cada tarjeta.
+- Nuevo componente cliente `components/molecules/PredictionsReveal.tsx` (el
+  toggle necesita estado). `LIVE_STATUSES` en `lib/data/types.ts` para no
+  repetir la lista de estados en vivo. Se eliminó el código muerto
+  `arePredictionsRevealed` / `REVEAL_MINUTES` de `lib/domain/cutoff.ts`.
+
+## 2. Usabilidad de filtros y orden
+
+- **Filtro "Próximos" seleccionado por defecto** al entrar a `/partidos` (sin
+  `status` en la URL). Los pills ahora **siempre seleccionan** (se quitó el
+  toggle-off, que con un default solo rebotaba); ya no hay vista "Todos"
+  implícita.
+- **Finalizados ordenados por finalización**: del que terminó más reciente al
+  más viejo. Como football-data no expone hora de fin, se usa **kickoff
+  descendente** como proxy. El resto de filtros queda cronológico ascendente, y
+  de paso los partidos dentro de cada día se ordenan por hora.
+
+## 3. Calidad y deploy
+
+- `tsc --noEmit` limpio, `eslint` limpio, `npm test` → **147 tests** en verde.
+- Commit **`406c659`** en `dev` → push (Preview) → merge **ff** a `master` →
+  push (Production). Deploys verificados **Ready** en Vercel CLI (`vercel ls`).
+- No hubo migraciones SQL (solo código + una query nueva).
+
+## 4. Estado al cierre
+
+- Feature **probada en prod por el usuario, todo OK**. `master` y `dev` en
+  `406c659` + esta entrada de bitácora.
