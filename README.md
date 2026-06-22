@@ -85,6 +85,7 @@ Abrir [http://localhost:3000](http://localhost:3000).
    - [`003_standings_breakdown.sql`](supabase/migrations/003_standings_breakdown.sql) — `exact_with_bonus` (desglose del ranking).
    - [`004_cutoff_10min.sql`](supabase/migrations/004_cutoff_10min.sql) — cutoff de predicción a 10 min (RLS).
    - [`005_push_notifications.sql`](supabase/migrations/005_push_notifications.sql) — tablas de notificaciones push.
+   - [`006_standings_penalty_bonuses.sql`](supabase/migrations/006_standings_penalty_bonuses.sql) — `penalty_bonuses` (desglose aditivo: cuenta todos los bonus de penal).
 
 El script crea:
 

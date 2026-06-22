@@ -23,7 +23,7 @@ App de predicciones del Mundial para grupo cerrado de ~10 amigos.
 - football-data.org v4: competición WC, auth `X-Auth-Token`, proxy en `app/api/fixtures/route.ts`
 - Cutoff de predicción: **10 min** antes del kickoff (`lib/domain/cutoff.ts` + RLS migración 004) — mantener ambos en sync
 - Revelar predicciones de todos: solo mientras el partido está **en curso** (`isLive`, `LIVE_STATUSES`), desplegable cerrado por defecto (`PredictionsReveal.tsx`); datos vía `PredictionsRepository.findRevealedForFixtures`
-- Migraciones SQL: 001 inicial · 002 penales · 003 desglose (`exact_with_bonus`) · 004 cutoff 10min · 005 push. DDL se aplica a mano en el SQL Editor (dev y prod)
+- Migraciones SQL: 001 inicial · 002 penales · 003 desglose (`exact_with_bonus`) · 004 cutoff 10min · 005 push · 006 `penalty_bonuses` (desglose aditivo: total = 3·exact_results + 1·correct_outcomes + 1·penalty_bonuses; `exact_with_bonus` queda en la vista por compat pero la UI ya no la usa). DDL se aplica a mano en el SQL Editor (dev y prod)
 - Deploy por Git en Vercel: `dev` → Preview (Supabase dev), `master` → Production (Supabase prod). Env vars por scope
 - Sync de resultados: **cron externo (cron-job.org) cada 5 min** pega a `/api/cron/sync` (protegido por `CRON_SECRET`, header `Authorization: Bearer …` o `?secret=`). GitHub Actions `sync.yml` (~10 min) queda de respaldo. Plan Vercel Hobby → Vercel Cron no sirve (1×/día)
 - Recordatorios push: **cron externo (cron-job.org) cada 15 min** pega a `/api/cron/reminders` (mismo `CRON_SECRET`; override de ventana con `?lead_hours=`). GitHub Actions `reminders.yml` (30 min) queda de respaldo — **el schedule de Actions se atrasa horas y se salteaba la ventana de 2 h** (por eso nunca llegaban los avisos)

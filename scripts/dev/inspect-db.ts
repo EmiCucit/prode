@@ -47,6 +47,15 @@ async function main() {
     `  003 (desglose): ${bonusErr ? `FALTA (${bonusErr.message})` : "OK (exact_with_bonus presente)"}`,
   );
 
+  // Migración 006: columna penalty_bonuses en la vista standings
+  const { error: penBonusErr } = await db
+    .from("standings")
+    .select("penalty_bonuses")
+    .limit(1);
+  console.log(
+    `  006 (bonus): ${penBonusErr ? `FALTA (${penBonusErr.message})` : "OK (penalty_bonuses presente)"}`,
+  );
+
   // Migración 005: tablas de notificaciones push
   const { error: pushErr } = await db.from("push_subscriptions").select("id").limit(1);
   const { error: remErr } = await db.from("reminder_sent").select("fixture_id").limit(1);

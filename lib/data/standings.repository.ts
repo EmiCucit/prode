@@ -20,8 +20,8 @@ export class StandingsRepository implements IStandingsRepository {
       displayName: row.display_name,
       totalPoints: Number(row.total_points),
       exactResults: Number(row.exact_results),
-      // Tolerante: si la migración 003 aún no se aplicó, la columna no existe → 0
-      exactWithBonus: row.exact_with_bonus != null ? Number(row.exact_with_bonus) : 0,
+      // Tolerante: si la migración 006 aún no se aplicó, la columna no existe → 0
+      penaltyBonuses: row.penalty_bonuses != null ? Number(row.penalty_bonuses) : 0,
       correctOutcomes: Number(row.correct_outcomes),
       predictionsMade: Number(row.predictions_made),
     }));

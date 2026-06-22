@@ -73,4 +73,5 @@ export interface DbStandingRow {
   exact_results: number;
   exact_with_bonus: number;
   correct_outcomes: number;
+  penalty_bonuses: number;
 }

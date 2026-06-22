@@ -4,7 +4,8 @@ export interface StandingRow {
   displayName: string;
   totalPoints: number;
   exactResults: number;
-  exactWithBonus: number;
+  /** Aciertos del bonus de penales (1pt c/u), sobre pleno o empate acertado. */
+  penaltyBonuses: number;
   correctOutcomes: number;
   predictionsMade: number;
 }

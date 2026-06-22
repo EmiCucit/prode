@@ -39,7 +39,7 @@ export default function RankingTable({ players, currentUserId, breakdowns = {} }
             <th className="px-2 sm:px-3 py-2.5 text-xs font-semibold text-muted-foreground">Jugador</th>
             <th className="px-1.5 sm:px-3 py-2.5 text-xs font-semibold text-muted-foreground text-right">Pts</th>
             <th className="px-1.5 sm:px-3 py-2.5 text-xs font-semibold text-muted-foreground text-right">Plenos</th>
-            <th className="px-1.5 sm:px-3 py-2.5 text-xs font-semibold text-muted-foreground text-right">P+B</th>
+            <th className="px-1.5 sm:px-3 py-2.5 text-xs font-semibold text-muted-foreground text-right">Bonus</th>
             <th className="px-1.5 sm:px-3 py-2.5 text-xs font-semibold text-muted-foreground text-right">✓</th>
           </tr>
         </thead>
@@ -48,8 +48,6 @@ export default function RankingTable({ players, currentUserId, breakdowns = {} }
             const position = i + 1;
             const isTop3   = position <= 3;
             const isMe     = !!currentUserId && player.userId === currentUserId;
-            // Plenos "comunes" (3pts) = exactos sin el bonus de penales
-            const plainExact = player.exactResults - player.exactWithBonus;
 
             const userBreakdown = breakdowns[player.userId] ?? [];
             const canExpand = userBreakdown.length > 0;
@@ -112,10 +110,10 @@ export default function RankingTable({ players, currentUserId, breakdowns = {} }
                     {player.totalPoints}
                   </td>
                   <td className="px-1.5 sm:px-3 py-2.5 text-right tabular-nums text-primary">
-                    {plainExact > 0 ? plainExact : "—"}
+                    {player.exactResults > 0 ? player.exactResults : "—"}
                   </td>
                   <td className="px-1.5 sm:px-3 py-2.5 text-right tabular-nums text-primary">
-                    {player.exactWithBonus > 0 ? player.exactWithBonus : "—"}
+                    {player.penaltyBonuses > 0 ? player.penaltyBonuses : "—"}
                   </td>
                   <td className="px-1.5 sm:px-3 py-2.5 text-right tabular-nums text-muted-foreground">
                     {player.correctOutcomes > 0 ? player.correctOutcomes : "—"}
@@ -141,7 +139,7 @@ export default function RankingTable({ players, currentUserId, breakdowns = {} }
 
       <div className="px-3 py-2 border-t border-border/30 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span><b className="text-primary">Plenos</b> resultado exacto (3pts)</span>
-        <span><b className="text-primary">P+B</b> pleno + bonus penales (4pts)</span>
+        <span><b className="text-primary">Bonus</b> penal acertado (1pt)</span>
         <span><b>✓</b> resultado acertado (1pt)</span>
       </div>
     </div>

@@ -14,7 +14,7 @@ function row(over: Partial<StandingRow> & { displayName: string }): StandingRow 
     displayName: over.displayName,
     totalPoints: over.totalPoints ?? 0,
     exactResults: over.exactResults ?? 0,
-    exactWithBonus: over.exactWithBonus ?? 0,
+    penaltyBonuses: over.penaltyBonuses ?? 0,
     correctOutcomes: over.correctOutcomes ?? 0,
     predictionsMade: over.predictionsMade ?? 0,
   };
@@ -87,20 +87,20 @@ describe("RankingTable", () => {
     expect(within(top).getByText("5")).toBeInTheDocument();
 
     const cero = screen.getByText("Cero").closest("tr")!;
-    // plenos, P+B y resultados en 0 se muestran como guion
+    // plenos, bonus y resultados en 0 se muestran como guion
     expect(within(cero).getAllByText("—")).toHaveLength(3);
   });
 
-  it("separa plenos comunes (3pts) de plenos con bonus (P+B, 4pts)", () => {
-    // 3 exactos totales, 1 de ellos con bonus de penales → Plenos=2, P+B=1
+  it("muestra plenos (todos los exactos), bonus de penales y resultados acertados", () => {
+    // 3 plenos, 2 aciertos de penal (sobre pleno o empate acertado), 4 resultados
     const players = [
-      row({ displayName: "Crack", totalPoints: 13, exactResults: 3, exactWithBonus: 1, correctOutcomes: 4 }),
+      row({ displayName: "Crack", totalPoints: 15, exactResults: 3, penaltyBonuses: 2, correctOutcomes: 4 }),
     ];
 
     render(<RankingTable players={players} />);
     const fila = screen.getByText("Crack").closest("tr")!;
-    expect(within(fila).getByText("2")).toBeInTheDocument(); // Plenos = 3 - 1
-    expect(within(fila).getByText("1")).toBeInTheDocument(); // P+B
+    expect(within(fila).getByText("3")).toBeInTheDocument(); // Plenos = todos los exactos
+    expect(within(fila).getByText("2")).toBeInTheDocument(); // Bonus
     expect(within(fila).getByText("4")).toBeInTheDocument(); // ✓ Resultado
   });
 
